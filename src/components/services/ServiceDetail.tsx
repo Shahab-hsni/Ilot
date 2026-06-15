@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { WhatsAppCTA } from '@/components/ui/WhatsAppCTA'
 import { Clock, Timer, Users, Package, Info, Wallet, FileDown } from 'lucide-react'
 import { getCategoryColor } from '@/lib/category-colors'
+import { firstWords } from '@/lib/text'
 import { toGoogleDocsPdfUrl } from '@/lib/google-docs'
 import type { ServiceWithCategory } from '@/lib/db/types'
 
@@ -61,8 +62,11 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
           </nav>
 
           {service.target_client && (
-            <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium bg-white/15 text-white backdrop-blur-sm mb-5">
-              {service.target_client}
+            <span
+              title={service.target_client}
+              className="inline-block max-w-full truncate px-4 py-1.5 rounded-full text-xs font-medium bg-white/15 text-white backdrop-blur-sm mb-5"
+            >
+              {firstWords(service.target_client)}
             </span>
           )}
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-[1.1]">

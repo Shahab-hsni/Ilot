@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { WhatsAppCTA } from '@/components/ui/WhatsAppCTA'
+import { firstWords } from '@/lib/text'
 import type { Service } from '@/lib/db/types'
 
 interface ServiceCardProps {
@@ -10,10 +11,13 @@ interface ServiceCardProps {
 export function ServiceCard({ service, categorySlug }: ServiceCardProps) {
   return (
     <div className="bg-background border border-surface rounded-card p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
-      {/* Badge */}
+      {/* Badge — truncated to one line; full text on hover via title */}
       {service.target_client && (
-        <span className="inline-flex items-center bg-white border border-gray-200 px-3 py-1 rounded-full text-xs font-medium text-gray-600 shadow-sm self-start mb-4">
-          {service.target_client}
+        <span
+          title={service.target_client}
+          className="inline-block max-w-full truncate bg-white border border-gray-200 px-3 py-1 rounded-full text-xs font-medium text-gray-600 shadow-sm self-start mb-4"
+        >
+          {firstWords(service.target_client)}
         </span>
       )}
 

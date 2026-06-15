@@ -1,4 +1,4 @@
-import Image from 'next/image'
+import { ParallaxImage } from '@/components/ui/ParallaxImage'
 import { RevealGroup, RevealItem } from '@/components/ui/Reveal'
 
 export function WhyUsBento() {
@@ -19,14 +19,8 @@ export function WhyUsBento() {
             </RevealItem>
 
             {/* Card 1 */}
-            <RevealItem className="rounded-2xl md:rounded-3xl p-5 md:p-8 flex flex-col justify-between min-h-[180px] md:min-h-[320px] relative overflow-hidden group">
-              <Image
-                src="/bento/Frictionless%20access.webp"
-                alt="Frictionless Access"
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                sizes="(max-width: 768px) 100vw, 33vw"
-              />
+            <RevealItem className="rounded-2xl md:rounded-3xl p-5 md:p-8 flex flex-col justify-between min-h-[180px] md:min-h-[320px] relative overflow-hidden">
+              <ParallaxImage src="/bento/Frictionless%20access.webp" alt="Frictionless Access" sizes="(max-width: 768px) 100vw, 33vw" />
               <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/70" />
               <h3 className="text-base md:text-2xl font-bold text-white relative z-10">Frictionless Access</h3>
               <p className="text-white/85 text-xs md:text-base leading-relaxed mt-3 md:mt-8 relative z-10">
@@ -35,14 +29,8 @@ export function WhyUsBento() {
             </RevealItem>
 
             {/* Card 2 */}
-            <RevealItem className="rounded-2xl md:rounded-3xl p-5 md:p-8 flex flex-col justify-between min-h-[180px] md:min-h-[320px] relative overflow-hidden group">
-              <Image
-                src="/bento/regulatory%20Authority.webp"
-                alt="Regulatory Authority"
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                sizes="(max-width: 768px) 100vw, 33vw"
-              />
+            <RevealItem className="rounded-2xl md:rounded-3xl p-5 md:p-8 flex flex-col justify-between min-h-[180px] md:min-h-[320px] relative overflow-hidden">
+              <ParallaxImage src="/bento/regulatory%20Authority.webp" alt="Regulatory Authority" sizes="(max-width: 768px) 100vw, 33vw" />
               <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/70" />
               <h3 className="text-base md:text-2xl font-bold text-white relative z-10">Regulatory Authority</h3>
               <p className="text-white/85 text-xs md:text-base leading-relaxed mt-3 md:mt-8 relative z-10">
@@ -51,14 +39,8 @@ export function WhyUsBento() {
             </RevealItem>
 
             {/* Card 3 — spans 2 columns, image focal panel */}
-            <RevealItem className="md:col-span-2 rounded-2xl md:rounded-3xl p-5 md:p-8 flex flex-col justify-between min-h-[200px] md:min-h-[360px] relative overflow-hidden group">
-              <Image
-                src="/bento/strategic%20efficiencies.webp"
-                alt="Strategic Efficiency"
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                sizes="(max-width: 768px) 100vw, 66vw"
-              />
+            <RevealItem className="md:col-span-2 rounded-2xl md:rounded-3xl p-5 md:p-8 flex flex-col justify-between min-h-[200px] md:min-h-[360px] relative overflow-hidden">
+              <ParallaxImage src="/bento/strategic%20efficiencies.webp" alt="Strategic Efficiency" sizes="(max-width: 768px) 100vw, 66vw" />
               <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/70" />
               <h3 className="text-base md:text-2xl font-bold text-white relative z-10">Strategic Efficiency</h3>
               <p className="text-white/85 font-medium text-xs md:text-base leading-relaxed max-w-md relative z-10">
@@ -67,14 +49,8 @@ export function WhyUsBento() {
             </RevealItem>
 
             {/* Card 4 */}
-            <RevealItem className="rounded-2xl md:rounded-3xl p-5 md:p-8 flex flex-col justify-between min-h-[200px] md:min-h-[360px] relative overflow-hidden group">
-              <Image
-                src="/bento/Absolute%20Transparency.webp"
-                alt="Absolute Transparency"
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                sizes="(max-width: 768px) 100vw, 33vw"
-              />
+            <RevealItem className="rounded-2xl md:rounded-3xl p-5 md:p-8 flex flex-col justify-between min-h-[200px] md:min-h-[360px] relative overflow-hidden">
+              <ParallaxImage src="/bento/Absolute%20Transparency.webp" alt="Absolute Transparency" sizes="(max-width: 768px) 100vw, 33vw" />
               <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/70" />
               <h3 className="text-base md:text-2xl font-bold text-white relative z-10">Absolute Transparency</h3>
               <p className="text-white/85 text-xs md:text-base leading-relaxed mt-3 md:mt-8 relative z-10">
