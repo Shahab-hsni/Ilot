@@ -48,3 +48,7 @@ next-env.d.ts
 
 # claude code local settings
 .claude/
+
+# local AI agent tooling (Codex notes, skills) — keep local, do not commit
+.agents/
+AGENTS.md

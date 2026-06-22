@@ -1,9 +1,14 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef, createContext, useContext } from 'react'
+import { LayoutGrid, List } from 'lucide-react'
 import { ServiceCard } from './ServiceCard'
+import { ServiceRow, ServiceListHeader } from './ServiceRow'
 import { ServiceSearch } from './ServiceSearch'
 import type { SubCategoryWithServices } from '@/lib/db/types'
+
+type ServiceView = 'cards' | 'list'
+const VIEW_STORAGE_KEY = 'ilot:service-view'
 
 // ── Shared search context ──────────────────────────────────────
 interface SearchCtx {
@@ -67,6 +72,18 @@ interface CategoryServicesProps {
 export function CategoryServices({ subCategories, categorySlug, accentColor, tintColor }: CategoryServicesProps) {
   const { query } = useServiceSearch()
 
+  // View toggle — remembered across visits. Starts 'cards' to match SSR, then
+  // hydrates from localStorage so there's no flash of the wrong layout mismatch.
+  const [view, setView] = useState<ServiceView>('cards')
+  useEffect(() => {
+    const saved = localStorage.getItem(VIEW_STORAGE_KEY)
+    if (saved === 'cards' || saved === 'list') setView(saved)
+  }, [])
+  const changeView = (next: ServiceView) => {
+    setView(next)
+    localStorage.setItem(VIEW_STORAGE_KEY, next)
+  }
+
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim()
     if (!q) return subCategories
@@ -107,9 +124,12 @@ export function CategoryServices({ subCategories, categorySlug, accentColor, tin
 
   return (
     <div>
-      {/* Search — scrolls with page */}
-      <div className="hidden md:block mb-6 max-w-[220px]">
-        <ServiceSearch />
+      {/* Search + view toggle — scrolls with page */}
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="min-w-0 flex-1 max-w-[220px]">
+          <ServiceSearch />
+        </div>
+        <ViewToggle view={view} onChange={changeView} accentColor={accentColor} tintColor={tintColor} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-12">
@@ -158,20 +178,78 @@ export function CategoryServices({ subCategories, categorySlug, accentColor, tin
                 <h2 className="text-2xl font-bold text-foreground mb-6">
                   {sc.name}
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {sc.services.map((service) => (
-                    <ServiceCard
-                      key={service.slug}
-                      service={service}
-                      categorySlug={categorySlug}
-                    />
-                  ))}
-                </div>
+                {view === 'cards' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {sc.services.map((service) => (
+                      <ServiceCard
+                        key={service.slug}
+                        service={service}
+                        categorySlug={categorySlug}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="max-w-6xl overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                    <ServiceListHeader />
+                    <div className="divide-y divide-gray-100">
+                      {sc.services.map((service) => (
+                        <ServiceRow
+                          key={service.slug}
+                          service={service}
+                          categorySlug={categorySlug}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </section>
             ))
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ── Cards / List view toggle ───────────────────────────────────
+interface ViewToggleProps {
+  view: ServiceView
+  onChange: (v: ServiceView) => void
+  accentColor?: string
+  tintColor?: string
+}
+
+function ViewToggle({ view, onChange, accentColor, tintColor }: ViewToggleProps) {
+  const options: { value: ServiceView; Icon: typeof LayoutGrid; label: string }[] = [
+    { value: 'cards', Icon: LayoutGrid, label: 'Card view' },
+    { value: 'list', Icon: List, label: 'List view' },
+  ]
+
+  return (
+    <div className="flex items-center gap-1 rounded-full border border-gray-200 bg-white p-1 shrink-0">
+      {options.map(({ value, Icon, label }) => {
+        const isActive = view === value
+        return (
+          <button
+            key={value}
+            type="button"
+            onClick={() => onChange(value)}
+            aria-pressed={isActive}
+            aria-label={label}
+            title={label}
+            className={`cursor-pointer flex items-center justify-center w-9 h-9 rounded-full transition-colors ${
+              isActive ? 'font-semibold' : 'text-muted hover:text-foreground'
+            }`}
+            style={
+              isActive
+                ? { backgroundColor: tintColor ?? 'rgba(245,178,26,0.12)', color: accentColor ?? '#F5B21A' }
+                : undefined
+            }
+          >
+            <Icon className="w-4 h-4" strokeWidth={2} />
+          </button>
+        )
+      })}
     </div>
   )
 }
