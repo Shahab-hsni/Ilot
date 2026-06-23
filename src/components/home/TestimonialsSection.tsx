@@ -1,18 +1,21 @@
 const TESTIMONIALS = [
   {
-    quote: 'Setting up a PT PMA and securing my Investor KITAS felt daunting from abroad. ILOT cut through the Indonesian bureaucracy with incredible speed. Their professional handling meant my company was operational weeks ahead of schedule.',
-    name: 'Marcus V.',
-    role: 'Tech Entrepreneur, Germany',
+    quote:
+      'I had an excellent experience with the team for my Bali working visa. They were professional, knowledgeable, and incredibly responsive, guiding me through every step and explaining each requirement clearly. What could have been stressful was made simple, and my approval came through smoothly. Highly recommended.',
+    name: 'Nathan Measuria',
+    role: 'Verified Client',
   },
   {
-    quote: "When investing in Bali real estate, you hear horror stories. ILOT's property due diligence and land verification gave me absolute security. Their legal advice is bulletproof. I wouldn't buy a square meter without them.",
-    name: 'Sarah Jenkins',
-    role: 'Real Estate Investor, Australia',
+    quote:
+      'I was looking for a serious, reliable company to handle my working visa, and I was lucky to find this team. They supported me through every stage and turned what I expected to be complicated into a genuinely easy, straightforward process. I could not recommend their services more highly.',
+    name: 'Mathieu Diefenbach',
+    role: 'Verified Client',
   },
   {
-    quote: "Relocating my life and remote work setup to Jakarta was entirely stress-free. ILOT managed everything seamlessly in the background. It's the ultimate concierge legal service for expats.",
-    name: 'David C.',
-    role: 'Remote Executive, UK',
+    quote:
+      'From start to finish, the team made the whole process effortless. They were responsive, transparent, and clearly knew exactly what they were doing. Every question I had was answered quickly, and every detail handled with care. I always felt in good hands, and I would recommend them without hesitation.',
+    name: 'Shahab Hosseini',
+    role: 'Verified Client',
   },
 ]
 
