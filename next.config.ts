@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
   // node_modules). Required by the Dockerfile in the repo root (Coolify).
   output: 'standalone',
   eslint: { ignoreDuringBuilds: true },
+  // The build host runs ~35 other containers alongside the build with no
+  // swap configured, so `next build`'s default multi-worker static-generation
+  // pass can push the process over the box's available RAM and get SIGKILLed
+  // with no error output. Capping to a single worker trades build speed for a
+  // much lower, steadier peak RSS.
+  experimental: { cpus: 1 },
   webpack: (config) => {
     // Sanity's ESM chunks do `import { useEffectEvent } from 'react'`.
     // React 19's index.js is a CJS conditional-require shim that webpack
