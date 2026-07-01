@@ -9,6 +9,7 @@ import {
 } from '@/lib/email/resend'
 import { adminEmail, userEmail, type ContactSubmission } from '@/lib/email/templates'
 import { rateLimit } from '@/lib/rate-limit'
+import { submitToHubSpot } from '@/lib/crm/hubspot'
 
 export interface ContactState {
   ok: boolean
@@ -32,6 +33,12 @@ async function clientIp(): Promise<string> {
 /** Collapse all whitespace (incl. control chars) to single spaces for header-safe text. */
 function singleLine(value: string): string {
   return value.replace(/\s+/g, ' ').trim()
+}
+
+/** Split a single display name into first / last for CRM fields (last may be empty). */
+function splitName(full: string): { firstName: string; lastName: string } {
+  const parts = full.trim().split(/\s+/)
+  return { firstName: parts[0] ?? '', lastName: parts.slice(1).join(' ') }
 }
 
 function validate(raw: {
@@ -87,6 +94,19 @@ export async function submitContact(
 
   if (!data) {
     return { ok: false, error: 'Please fix the errors below.', fieldErrors }
+  }
+
+  // Push into HubSpot CRM (deduped by email). Non-fatal and independent of
+  // email delivery — a CRM hiccup must never block the enquiry. No-op unless
+  // HUBSPOT_PORTAL_ID + HUBSPOT_FORM_GUID are configured.
+  const { firstName, lastName } = splitName(data.name)
+  try {
+    await submitToHubSpot(
+      { email: data.email, firstName, lastName, phone: data.phone, message: data.message },
+      { ipAddress: await clientIp(), pageName: 'Ilot Contact Form' }
+    )
+  } catch (err) {
+    console.error('[contact] HubSpot submit failed:', err)
   }
 
   // No Resend key configured yet (e.g. local dev before account setup):
