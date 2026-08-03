@@ -27,6 +27,11 @@ export const metadata: Metadata = {
     locale: 'en_US',
     type: 'website',
   },
+  // Meta Business Manager domain verification for ilotlegal.com. Emitted into
+  // <head> at build time — Meta's crawler ignores anything injected by JS.
+  other: {
+    'facebook-domain-verification': '495tue946uav6fkn72wbt5r2ug0axu',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
