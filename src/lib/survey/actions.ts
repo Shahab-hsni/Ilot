@@ -58,29 +58,28 @@ export async function submitSurveyAction(
     }
   }
 
-  // No sink configured (local dev, or before the HubSpot private app exists).
-  // Log so a test submission is verifiable rather than silently vanishing, and
-  // report success so the full modal flow stays exercisable.
+  // No sink configured (local dev, or before the HubSpot form exists). Log so a
+  // test submission is verifiable rather than silently vanishing, and report
+  // success so the full modal flow stays exercisable.
   if (!HUBSPOT_SURVEY_ENABLED) {
-    console.info('[survey] HUBSPOT_ACCESS_TOKEN not set — captured:', {
-      contactMethod,
-      contact,
-    })
+    console.info(
+      '[survey] HubSpot not configured — captured (not sent to HubSpot):',
+      { contactMethod, contact }
+    )
     return { ok: true }
   }
 
   try {
-    await submitSurveyToHubSpot({
-      contactMethod,
-      contact,
-      // Stamped server-side. The browser's clock is not evidence of anything.
-      submittedAt: new Date().toISOString(),
-    })
+    await submitSurveyToHubSpot(
+      { contactMethod, contact },
+      { ipAddress: await clientIp(), pageName: 'Ilot Survey Intake' }
+    )
     return { ok: true }
   } catch (err) {
     // HubSpot is the only sink here, so a failure means the answer is lost.
-    // Say so instead of showing the success screen over a dropped lead.
-    console.error('[survey] HubSpot submit failed:', err)
+    // Say so instead of showing the success screen over a dropped lead, and log
+    // the value alongside the error so it can be recovered by hand.
+    console.error('[survey] HubSpot submit failed:', err, { contactMethod, contact })
     return { ok: false, error: GENERIC_ERROR }
   }
 }

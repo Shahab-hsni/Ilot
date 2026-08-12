@@ -1,129 +1,156 @@
 import 'server-only'
-import type { SurveyPayload } from '@/lib/survey/types'
 
 /**
- * HubSpot CRM Objects API integration for survey intake leads.
+ * HubSpot Forms Submission API integration for the survey intake modal.
  *
- * ── Why not the Forms API (`./hubspot.ts`)? ──────────────────────────────────
+ * Same mechanism as the contact form (`./hubspot.ts`): the public Forms
+ * endpoint, which needs no API token — a Portal ID and a Form GUID are not
+ * secrets, they appear in any embedded HubSpot form. That is the whole reason
+ * this is worth doing: no private app, no access token to provision or rotate,
+ * no extra secret in Coolify.
  *
- * The contact form uses the public Forms Submission endpoint, which needs no
- * secret. We cannot use it here: it requires an `email` field as the contact
- * identity, and half of all survey answers are a Telegram handle with no email
- * attached. The Forms API rejects those outright.
+ * Deliberately shares the contact form's GUID — one HubSpot form receives both
+ * contact enquiries and survey answers. Nothing new to provision: if the
+ * contact form works, this works.
  *
- * The CRM Objects API does allow an email-less contact, so a Telegram-only lead
- * is stored as a real contact carrying a `telegram` property. The cost is that
- * this endpoint needs a private-app access token, which IS a secret and must
- * never reach the browser — hence `server-only` and the server action in
- * `src/lib/survey/actions.ts` that calls it.
+ * Gated on config: without the env vars this is a clean no-op, so the modal
+ * keeps working before HubSpot is set up.
  *
- * ── One-time HubSpot setup ───────────────────────────────────────────────────
+ * ── What the shared form must allow ──────────────────────────────────────────
  *
- * 1. Settings → Integrations → Private Apps → create an app with the
- *    `crm.objects.contacts.read` and `crm.objects.contacts.write` scopes.
- *    Put its token in `HUBSPOT_ACCESS_TOKEN`.
- * 2. Settings → Properties → Contact properties → create a single-line text
- *    property with the internal name `telegram`. Without it, HubSpot returns
- *    400 PROPERTY_DOESNT_EXIST on every Telegram submission.
+ * The survey sends far fewer fields than the contact form, and HubSpot
+ * validates every submission against the form definition. So:
  *
- * Gated on config: with no token this is a clean no-op, exactly like the Forms
- * helper, so the survey keeps working before HubSpot is set up.
+ * 1. No OPTIONAL field may be marked required. The survey sends no firstname,
+ *    no message, no phone; a required one rejects every survey submission with
+ *    "Required field 'x' is missing". Marketing → Forms → edit → clear those
+ *    toggles. (The contact form's own client-side validation is what actually
+ *    enforces its fields, so nothing is lost.)
+ *
+ * 2. The form must CONTAIN a Telegram field, or Telegram submissions 400 with
+ *    "telegram is not a valid field". Create the property first:
+ *      Settings → Properties → Create property
+ *      Object type: Contact · Label: "Telegram" · Type: Single-line text
+ *    Confirm its INTERNAL NAME is exactly `telegram` — HubSpot derives it from
+ *    the label, so check rather than assume. If it differs, update
+ *    TELEGRAM_FIELD below.
+ *
+ * ── Why Telegram submissions carry a synthetic email ─────────────────────────
+ *
+ * `email` is required on every HubSpot form and CANNOT be made optional — it is
+ * the identity property contacts are created and deduped by. A Telegram-only
+ * visitor has no email, so a bare handle submission is rejected outright:
+ *
+ *    Error in 'fields.email'. Required field 'email' is missing  (REQUIRED_FIELD)
+ *
+ * Rather than lose those leads, we synthesise `<handle>@telegram.invalid` and
+ * put the real handle in the `telegram` property. `.invalid` is reserved by
+ * RFC 2606 precisely for this: it can never be registered, never resolves, and
+ * reads as unmistakably fake, so nobody mistakes one for a real address.
+ *
+ * ⚠️ Exclude them from any email send. In HubSpot, filter with:
+ *      Email · does not contain · @telegram.invalid
+ *
+ * (The alternative is the CRM objects API, which can create a contact with no
+ * email — but that needs a private-app access token, which is exactly the
+ * complexity this integration exists to avoid.)
+ *
+ * Both survey and contact submissions land in the same form's submission list.
+ * To tell them apart, filter on the `pageName` context this sends
+ * ("Ilot Survey Intake") versus the contact form's ("Ilot Contact Form").
  */
-const ACCESS_TOKEN = process.env.HUBSPOT_ACCESS_TOKEN
+const PORTAL_ID = process.env.HUBSPOT_PORTAL_ID
+const FORM_GUID = process.env.HUBSPOT_FORM_GUID
 
-export const HUBSPOT_SURVEY_ENABLED = Boolean(ACCESS_TOKEN)
-
-const API = 'https://api.hubapi.com/crm/v3/objects/contacts'
+export const HUBSPOT_SURVEY_ENABLED = Boolean(PORTAL_ID && FORM_GUID)
 
 /**
- * Internal name of the custom contact property holding the Telegram handle.
- * Stored without the leading '@' — `normalizeTelegram` has already stripped it.
+ * Internal name of the Telegram contact property. Not a HubSpot default — it
+ * must exist in the portal and be present on the form, or HubSpot rejects the
+ * submission with an "invalid fields" error naming it.
  */
-const TELEGRAM_PROPERTY = 'telegram'
+const TELEGRAM_FIELD = 'telegram'
 
-interface HubSpotSearchResponse {
-  total: number
-  results: { id: string }[]
+/**
+ * Domain for the synthetic address on Telegram-only submissions. RFC 2606
+ * reserves `.invalid` as permanently unregistrable, so these can never resolve,
+ * never receive mail, and never collide with a real address.
+ */
+const TELEGRAM_EMAIL_DOMAIN = 'telegram.invalid'
+
+/**
+ * The address a Telegram handle is filed under.
+ *
+ * Lower-cased: Telegram handles are case-insensitive, so `Kadek_C` and
+ * `kadek_c` are the same person — without this they would dedup as two separate
+ * HubSpot contacts. The `telegram` property keeps the handle as typed.
+ *
+ * Handles are `[A-Za-z0-9_]` only, all valid in an email local-part, so no
+ * further escaping is needed.
+ */
+export function telegramPlaceholderEmail(handle: string): string {
+  return `${handle.toLowerCase()}@${TELEGRAM_EMAIL_DOMAIN}`
 }
 
-async function hubspotFetch(url: string, init: RequestInit): Promise<Response> {
-  return fetch(url, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${ACCESS_TOKEN}`,
-      'Content-Type': 'application/json',
-      ...(init.headers ?? {}),
-    },
-    // Never let a slow CRM hold the visitor's submit spinner open indefinitely.
-    signal: AbortSignal.timeout(8000),
-  })
+export interface SurveySubmission {
+  contactMethod: 'email' | 'telegram'
+  /** Already normalised: emails lowercased, Telegram handles stripped of '@'. */
+  contact: string
 }
 
-async function failure(res: Response, label: string): Promise<Error> {
-  const body = await res.text().catch(() => '')
-  return new Error(`HubSpot ${label} failed (${res.status}): ${body}`)
+export interface SurveyContext {
+  ipAddress?: string
+  pageUri?: string
+  pageName?: string
 }
 
 /**
- * Find an existing contact by whichever identifier we have.
+ * Submit one survey answer to HubSpot. Throws on a non-2xx so the caller can
+ * decide what to do — for the survey that is fatal, since HubSpot is the only
+ * sink and a dropped write is a lost lead.
  *
- * Deduping matters more here than on the contact form: a campaign link gets
- * re-shared and the same person answers twice. Without this every resend
- * creates a duplicate contact.
+ * The error carries HubSpot's own response body, which names the offending
+ * field on a misconfiguration. That is the difference between "it doesn't work"
+ * and "the form has no `telegram` field".
  */
-async function findContactId(
-  property: string,
-  value: string
-): Promise<string | null> {
-  const res = await hubspotFetch(`${API}/search`, {
+export async function submitSurveyToHubSpot(
+  submission: SurveySubmission,
+  context: SurveyContext = {}
+): Promise<void> {
+  if (!HUBSPOT_SURVEY_ENABLED) return
+
+  const endpoint = `https://api.hsforms.com/submissions/v3/integration/submit/${PORTAL_ID}/${FORM_GUID}`
+
+  // An email submission sends only `email` — sending a blank `telegram` would
+  // wipe a real handle off an existing contact.
+  //
+  // A Telegram submission sends the handle AND a synthetic email, because
+  // HubSpot rejects any submission without one. See the note above.
+  //
+  // No `submittedAt` field — HubSpot timestamps the submission itself.
+  const fields =
+    submission.contactMethod === 'email'
+      ? [{ name: 'email', value: submission.contact }]
+      : [
+          { name: TELEGRAM_FIELD, value: submission.contact },
+          { name: 'email', value: telegramPlaceholderEmail(submission.contact) },
+        ]
+
+  const res = await fetch(endpoint, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      filterGroups: [
-        { filters: [{ propertyName: property, operator: 'EQ', value }] },
-      ],
-      properties: ['hs_object_id'],
-      limit: 1,
+      fields,
+      context: {
+        ...(context.ipAddress ? { ipAddress: context.ipAddress } : {}),
+        ...(context.pageUri ? { pageUri: context.pageUri } : {}),
+        ...(context.pageName ? { pageName: context.pageName } : {}),
+      },
     }),
   })
 
-  if (!res.ok) throw await failure(res, 'search')
-
-  const data = (await res.json()) as HubSpotSearchResponse
-  return data.results[0]?.id ?? null
-}
-
-/**
- * Upsert a survey lead into HubSpot.
- *
- * Throws on a non-2xx response so the caller can log it. Callers should treat
- * failure as non-fatal only if they have another sink — for the survey, HubSpot
- * IS the sink, so `actions.ts` surfaces the error to the visitor rather than
- * telling them we'll be in touch when the answer was actually dropped.
- */
-export async function submitSurveyToHubSpot(payload: SurveyPayload): Promise<void> {
-  if (!HUBSPOT_SURVEY_ENABLED) return
-
-  const isEmail = payload.contactMethod === 'email'
-  const identityProperty = isEmail ? 'email' : TELEGRAM_PROPERTY
-
-  const properties: Record<string, string> = {
-    [identityProperty]: payload.contact,
-    // Standard, writable, and safe to set on both create and update. Survey
-    // answers are top-of-funnel by definition.
-    lifecyclestage: 'lead',
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`HubSpot survey submit failed (${res.status}): ${body}`)
   }
-
-  const existingId = await findContactId(identityProperty, payload.contact)
-
-  const res = existingId
-    ? await hubspotFetch(`${API}/${existingId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ properties }),
-      })
-    : await hubspotFetch(API, {
-        method: 'POST',
-        body: JSON.stringify({ properties }),
-      })
-
-  if (!res.ok) throw await failure(res, existingId ? 'update' : 'create')
 }

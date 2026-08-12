@@ -10,6 +10,7 @@ import { ProcessSteps } from '@/components/home/ProcessSteps'
 import { TestimonialsSection } from '@/components/home/TestimonialsSection'
 import { LatestInsights } from '@/components/home/LatestInsights'
 import { CTABanner } from '@/components/home/CTABanner'
+import SurveyIntakeGate from '@/components/home/SurveyIntakeGate'
 
 // ISR: revalidate hourly so newly published posts surface on the home page.
 export const revalidate = 3600
@@ -113,6 +114,17 @@ export default async function HomePage() {
       <TestimonialsSection />
       <LatestInsights posts={latestPosts} />
       <CTABanner />
+      {/*
+        Renders nothing unless the visitor arrived on
+        `/?survey_intake_form=true`, and only then does it fetch the modal's
+        chunk. Import it statically — the dynamic() call lives inside the gate
+        (a Client Component), because dynamic(..., { ssr: false }) placed
+        directly in a Server Component never mounts at all.
+
+        Removing this line is what makes the survey silently stop appearing:
+        there is no error, the param is simply never read.
+      */}
+      <SurveyIntakeGate />
     </>
   )
 }
