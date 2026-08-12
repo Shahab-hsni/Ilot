@@ -254,13 +254,13 @@ export default function AboutPage() {
               style={{ fontSize: 'clamp(1.75rem, 3.5vw, 3.25rem)' }}
             >
               “We started Ilot because moving your life or business to a new country
-              shouldn’t feel like a fight. Our job is to make the complex feel effortless.”
+              shouldn't feel like a fight. Our job is to make the complex feel effortless.”
             </blockquote>
           </RevealItem>
           <RevealItem>
             {/* PLACEHOLDER attribution */}
             <p className="mt-8 text-muted">
-              <span className="font-bold text-foreground">[Founder name]</span> · Founder &amp; Managing Director
+              <span className="font-bold text-foreground">Faizah Khoiroh Hazmi</span> · Managing Director
             </p>
           </RevealItem>
         </RevealGroup>
