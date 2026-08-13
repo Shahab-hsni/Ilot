@@ -2,7 +2,7 @@
 
 import { headers } from 'next/headers'
 import { rateLimit } from '@/lib/rate-limit'
-import { submitSurveyToHubSpot, HUBSPOT_SURVEY_ENABLED } from '@/lib/crm/hubspot-survey'
+import { appendSurveyRow, GSHEET_ENABLED } from './gsheet'
 import { validateContact, normalizeContact } from './validation'
 import type { SurveyPayload } from './types'
 
@@ -58,28 +58,33 @@ export async function submitSurveyAction(
     }
   }
 
-  // No sink configured (local dev, or before the HubSpot form exists). Log so a
-  // test submission is verifiable rather than silently vanishing, and report
-  // success so the full modal flow stays exercisable.
-  if (!HUBSPOT_SURVEY_ENABLED) {
-    console.info(
-      '[survey] HubSpot not configured — captured (not sent to HubSpot):',
-      { contactMethod, contact }
-    )
+  // No sink configured (local dev, or before the Apps Script web app is
+  // deployed). Log so a test submission is verifiable rather than silently
+  // vanishing, and report success so the full modal flow stays exercisable.
+  if (!GSHEET_ENABLED) {
+    console.info('[survey] Sheet not configured — captured (not stored):', {
+      contactMethod,
+      contact,
+    })
     return { ok: true }
   }
 
   try {
-    await submitSurveyToHubSpot(
-      { contactMethod, contact },
-      { ipAddress: await clientIp(), pageName: 'Ilot Survey Intake' }
-    )
+    await appendSurveyRow({
+      contactMethod,
+      contact,
+      // The client's timestamp, not the server's: it is what the visitor's
+      // clock said when they submitted, and the sheet records when the answer
+      // was given rather than when it happened to be written.
+      submittedAt: String(payload.submittedAt ?? new Date().toISOString()),
+      ipAddress: await clientIp(),
+    })
     return { ok: true }
   } catch (err) {
-    // HubSpot is the only sink here, so a failure means the answer is lost.
-    // Say so instead of showing the success screen over a dropped lead, and log
-    // the value alongside the error so it can be recovered by hand.
-    console.error('[survey] HubSpot submit failed:', err, { contactMethod, contact })
+    // The sheet is the only sink, so a failure means the answer is lost. Say so
+    // instead of showing the success screen over a dropped lead, and log the
+    // value alongside the error so it can be recovered by hand.
+    console.error('[survey] Sheet append failed:', err, { contactMethod, contact })
     return { ok: false, error: GENERIC_ERROR }
   }
 }
