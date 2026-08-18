@@ -1,5 +1,13 @@
 # ILOT WhatsApp Bot — current build status
 
+> ⚠️ **SUPERSEDED for anything number/WABA-related (18 Aug 2026).**
+> The phone number, Phone Number ID and WABA IDs below are the **old sandbox** values,
+> and the "Prod WABA `786260250486628`" line is **unconfirmed / likely stale**.
+> For the current cutover to **+62 819-9480-0946**, the live IDs, and what is still
+> blocking go-live, read **[`/WHATSAPP_CUTOVER_STATUS.md`](../../WHATSAPP_CUTOVER_STATUS.md)**
+> in the repo root first. The bot-logic sections below (Gemini agent, parsing, NocoDB,
+> layers, smoke tests) are still accurate.
+
 > **Last updated:** 14 May 2026 (evening — Layer 3 complete)
 > **Single source of truth — read this first.** Older runbooks
 > (`01-system-user-token.md` … `04-nocodb-file-handling.md`) have
