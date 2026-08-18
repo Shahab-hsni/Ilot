@@ -9,6 +9,7 @@ import { WhyUsBento } from '@/components/home/WhyUsBento'
 import { ProcessSteps } from '@/components/home/ProcessSteps'
 import { TestimonialsSection } from '@/components/home/TestimonialsSection'
 import { LatestInsights } from '@/components/home/LatestInsights'
+import { MeetingsEmbed } from '@/components/home/MeetingsEmbed'
 import { CTABanner } from '@/components/home/CTABanner'
 import SurveyIntakeGate from '@/components/home/SurveyIntakeGate'
 
@@ -113,6 +114,7 @@ export default async function HomePage() {
       <ProcessSteps />
       <TestimonialsSection />
       <LatestInsights posts={latestPosts} />
+      <MeetingsEmbed />
       <CTABanner />
       {/*
         Renders nothing unless the visitor arrived on
