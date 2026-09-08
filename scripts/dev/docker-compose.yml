@@ -1,0 +1,94 @@
+# Local development stack for the Ilot WhatsApp bot workflows.
+#
+# Not a production deployment. It exists so n8n workflows can be built and
+# tested off-production, instead of being edited live in the n8n UI.
+#
+#   docker compose -f scripts/dev/docker-compose.yml up -d
+#
+# Everything uses the bundled SQLite. No PostgreSQL, no external services.
+# The Meta WhatsApp Cloud API is not run here — outbound sends are pointed at
+# webhook-catcher instead (see scripts/dev/webhook-catcher.mjs).
+#
+# Chatwoot ran here briefly while a shared inbox was evaluated, and was not
+# adopted: the handoff is staffed by a single PIC on the company admin number, so
+# there is no multi-agent routing to solve. The findings were worth keeping and
+# live in docs/archive/chatwoot-evaluation.md — including the one that matters
+# beyond Chatwoot, that a Cloud API number cannot also be used in the WhatsApp
+# Business app.
+
+name: ilot-dev
+
+services:
+  # --------------------------------------------------------------------------
+  # n8n — http://localhost:5678
+  #
+  # PIN NOTE: the tag below must match the production n8n version. Production's
+  # exact version is unconfirmed; docs/human-agent-handoff.md only records the floor
+  # ("2.10.2+", where the draft / activeVersion split was introduced). The
+  # default here is the current 2.x release, not a confirmed match. Read the
+  # version from the production n8n UI (Help -> About) and re-pin:
+  #
+  #   N8N_VERSION=<production version> docker compose -f scripts/dev/docker-compose.yml up -d
+  #
+  # This matters because draft-vs-activeVersion behaviour is version dependent,
+  # and that is the exact trap this stack exists to avoid.
+  # --------------------------------------------------------------------------
+  n8n:
+    image: n8nio/n8n:${N8N_VERSION:-2.19.5}
+    container_name: ilot-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # Local-only key. Not a secret, and deliberately not read from .env so a
+      # fresh clone comes up without setup. It only encrypts credentials stored
+      # in the local SQLite volume, which holds no production credentials.
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-ilot-local-dev-key-not-a-secret}
+      GENERIC_TIMEZONE: Asia/Jakarta
+      TZ: Asia/Jakarta
+      WEBHOOK_URL: http://localhost:5678/
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_RUNNERS_ENABLED: "true"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      # Read-only so an import can never write local table IDs back into the
+      # repo snapshots. Patch imported copies inside n8n, never these files.
+      - ../../n8n-workflows:/workflows:ro
+
+  # --------------------------------------------------------------------------
+  # NocoDB — http://localhost:8080
+  # Tables are created by scripts/dev/seed-nocodb.mjs with sample rows only.
+  # Local table IDs will differ from production; that is expected.
+  # --------------------------------------------------------------------------
+  nocodb:
+    image: nocodb/nocodb:${NOCODB_VERSION:-2026.08.1}
+    container_name: ilot-nocodb
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      NC_DISABLE_TELE: "true"
+      TZ: Asia/Jakarta
+    volumes:
+      - nocodb_data:/usr/app/data
+
+  # --------------------------------------------------------------------------
+  # webhook-catcher — http://localhost:4000
+  # Stands in for Mattermost and for WhatsApp sends. Reachable from n8n as
+  # http://webhook-catcher:4000/hook (compose network — avoids the
+  # host.docker.internal problem under Colima).
+  # --------------------------------------------------------------------------
+  webhook-catcher:
+    image: node:20-alpine
+    container_name: ilot-webhook-catcher
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    working_dir: /app
+    command: ["node", "/app/webhook-catcher.mjs"]
+    volumes:
+      - .:/app:ro
+
+volumes:
+  n8n_data:
+  nocodb_data:

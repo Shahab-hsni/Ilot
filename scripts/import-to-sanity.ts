@@ -13,8 +13,8 @@ import type { ClientDataRow } from './lib/types'
 
 const DRY_RUN = process.argv.includes('--dry-run')
 const ROOT = path.resolve(__dirname, '..')
-const CLIENT_DATA_PATH = path.join(ROOT, 'docs/seed-data-raw.json')
-const SEED_SQL_PATH = path.join(ROOT, 'supabase/seed.sql')
+const CLIENT_DATA_PATH = path.join(ROOT, 'docs/seed-data/raw.json')
+const SEED_SQL_PATH = path.join(ROOT, 'docs/seed-data/legacy-categories.sql')
 
 function requireEnv(name: string): string {
   const v = process.env[name]

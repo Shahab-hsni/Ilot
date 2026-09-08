@@ -1,0 +1,120 @@
+{
+  "id": "fbNF72OFmS0rRtuv",
+  "name": "Ilot - Calendar Check (sub)",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "when-called",
+      "name": "When Called"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Compute time range for freeBusy query\nconst queryInput = $input.all()[0].json.query || '';\nconst dateMatch = queryInput.match(/(\\d{4}-\\d{2}-\\d{2})/);\nconst preferred_date = dateMatch ? dateMatch[1] : null;\n\nconst BIZ_START = 9;\nconst BIZ_END = 17;\nconst DAYS_AHEAD = 7;\nconst OFFSET_MS = 8 * 60 * 60 * 1000; // WITA = UTC+8\n\nconst now = new Date();\nconst nowWITA = new Date(now.getTime() + OFFSET_MS);\n\nlet searchStart = new Date(Date.UTC(\n  nowWITA.getUTCFullYear(), nowWITA.getUTCMonth(), nowWITA.getUTCDate(),\n  BIZ_START, 0, 0\n) - OFFSET_MS);\n\nif (now > searchStart) {\n  const nextHour = new Date(now);\n  nextHour.setMinutes(0, 0, 0);\n  nextHour.setHours(nextHour.getHours() + 1);\n  searchStart = nextHour;\n}\n\nif (preferred_date) {\n  const pref = new Date(preferred_date + 'T' + String(BIZ_START).padStart(2,'0') + ':00:00+08:00');\n  if (pref > searchStart) searchStart = pref;\n}\n\nconst searchEnd = new Date(searchStart.getTime() + DAYS_AHEAD * 24 * 60 * 60 * 1000);\n\nreturn [{\n  json: {\n    timeMin: searchStart.toISOString(),\n    timeMax: searchEnd.toISOString(),\n    searchStartMs: searchStart.getTime(),\n    searchEndMs: searchEnd.getTime(),\n    query: queryInput\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "prepare-dates",
+      "name": "Prepare Dates"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/calendar/v3/freeBusy",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleCalendarOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ timeMin: $json.timeMin, timeMax: $json.timeMax, timeZone: 'Asia/Makassar', items: [{ id: 'primary' }] }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "freebusy-request",
+      "name": "Google FreeBusy",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "EtGFnzyHrPfP7Bkf",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Process FreeBusy response and generate available slots\nconst freeBusyResp = $input.all()[0].json;\nconst prevData = $('Prepare Dates').all()[0].json;\nconst searchStartMs = prevData.searchStartMs;\nconst searchEndMs = prevData.searchEndMs;\n\nconst BIZ_START = 9;\nconst BIZ_END = 17;\nconst SLOT_MINUTES = 60;\nconst OFFSET_MS = 8 * 60 * 60 * 1000;\n\n// Extract busy periods\nconst cals = freeBusyResp.calendars || {};\nconst primaryKey = Object.keys(cals)[0] || 'primary';\nconst busySlots = cals[primaryKey]?.busy || [];\n\n// Generate available slots\nconst slots = [];\nconst cursor = new Date(searchStartMs);\nconst searchEnd = new Date(searchEndMs);\n\n// Round up to next hour\nif (cursor.getMinutes() > 0) {\n  cursor.setMinutes(0, 0, 0);\n  cursor.setTime(cursor.getTime() + 60 * 60 * 1000);\n}\n\nwhile (cursor < searchEnd && slots.length < 15) {\n  const witaTime = new Date(cursor.getTime() + OFFSET_MS);\n  const day = witaTime.getUTCDay();\n  const hour = witaTime.getUTCHours();\n\n  // Skip weekends\n  if (day === 0 || day === 6) {\n    const daysToMon = day === 0 ? 1 : 2;\n    cursor.setTime(cursor.getTime() + daysToMon * 24 * 60 * 60 * 1000);\n    const c2 = new Date(cursor.getTime() + OFFSET_MS);\n    cursor.setTime(Date.UTC(c2.getUTCFullYear(), c2.getUTCMonth(), c2.getUTCDate(), BIZ_START, 0, 0) - OFFSET_MS);\n    continue;\n  }\n\n  // Skip outside business hours\n  if (hour < BIZ_START || hour >= BIZ_END) {\n    const c2 = new Date(cursor.getTime() + OFFSET_MS);\n    const nextDay = new Date(Date.UTC(c2.getUTCFullYear(), c2.getUTCMonth(), c2.getUTCDate() + 1, BIZ_START, 0, 0) - OFFSET_MS);\n    cursor.setTime(nextDay.getTime());\n    continue;\n  }\n\n  const slotStart = new Date(cursor);\n  const slotEnd = new Date(cursor.getTime() + SLOT_MINUTES * 60 * 1000);\n\n  // Check if busy\n  const isBusy = busySlots.some(b => {\n    const busyStart = new Date(b.start);\n    const busyEnd = new Date(b.end);\n    return slotStart < busyEnd && slotEnd > busyStart;\n  });\n\n  if (!isBusy) {\n    const witaStart = new Date(slotStart.getTime() + OFFSET_MS);\n    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];\n    const dayName = dayNames[witaStart.getUTCDay()];\n    const dateStr = witaStart.toISOString().slice(0,10);\n    const timeStr = String(witaStart.getUTCHours()).padStart(2,'0') + ':' + String(witaStart.getUTCMinutes()).padStart(2,'0');\n    slots.push({\n      n: slots.length + 1,\n      day: dayName,\n      date: dateStr,\n      time: timeStr + ' WITA',\n      iso: slotStart.toISOString()\n    });\n  }\n\n  cursor.setTime(cursor.getTime() + SLOT_MINUTES * 60 * 1000);\n}\n\nif (slots.length === 0) {\n  return [{ json: { response: 'No available slots found in the next 7 business days. Please suggest a different date range.' } }];\n}\n\nlet msg = 'Available consultation slots at ILOT Legal Office, Bali:\\n\\n';\nfor (const s of slots) {\n  msg += `${s.n}. ${s.day} ${s.date} at ${s.time}\\n`;\n}\nmsg += '\\nPlease tell the customer to pick a slot number or suggest another date.';\n\nreturn [{ json: { response: msg } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "id": "format-slots",
+      "name": "Format Slots"
+    }
+  ],
+  "connections": {
+    "When Called": {
+      "main": [
+        [
+          {
+            "node": "Prepare Dates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Dates": {
+      "main": [
+        [
+          {
+            "node": "Google FreeBusy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google FreeBusy": {
+      "main": [
+        [
+          {
+            "node": "Format Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": [],
+  "meta": {
+    "exportedFrom": "activeVersion",
+    "exportedAt": "2026-08-31",
+    "sourceVersionId": "098ba10a-b254-4d69-bfd7-0f78766a6de5",
+    "draftMatchesPublished": true,
+    "note": "Read from n8n.ilotlegal.com via the public API. Production runs activeVersion, not the top-level draft nodes."
+  },
+  "versionId": "098ba10a-b254-4d69-bfd7-0f78766a6de5"
+}

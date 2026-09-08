@@ -1,5 +1,10 @@
 import json
 from collections import Counter
+from pathlib import Path
+
+# Resolve relative to this file so the script runs anywhere, not just the
+# machine it was written on (it used to hardcode a D:\ Windows path).
+OUT_PATH = Path(__file__).resolve().parent.parent / 'docs' / 'seed-data' / 'raw.json'
 
 def e(s):
     return s.replace('â€“', '–').replace('  ', ' ').strip()
@@ -695,6 +700,6 @@ if dupes:
 else:
     print('No slug collisions OK')
 
-with open(r'D:\ilot-legal\docs\seed-data-raw.json', 'w', encoding='utf-8') as f:
+with open(OUT_PATH, 'w', encoding='utf-8') as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
-print('Written to D:/ilot-legal/docs/seed-data-raw.json')
+print(f'Written to {OUT_PATH}')

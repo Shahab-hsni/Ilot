@@ -5,8 +5,9 @@
 > demonstrate commitment by emailing required documents. The bot
 > verifies the email arrived, then — and only then — assigns an agent.
 
-> **Status:** Design proposal for review.
-> **Replaces:** Layer 4 "department admin handoff" in `docs/whatsapp-setup/STATUS.md`.
+> **Status:** Built and running. The gate itself works end to end; what breaks
+> immediately after it is the agent handoff — see [`human-agent-handoff.md`](./human-agent-handoff.md).
+> **Replaces:** Layer 4 "department admin handoff" in `docs/archive/whatsapp-setup/status.md`.
 
 ---
 
@@ -378,7 +379,7 @@ legal-services business where missed mail = missed revenue.
    only needs one (`legal@`). Agents may want their own.
 3. **What docs do we actually require per service?** The list above
    (passport + proof of address) is a placeholder — real list depends on
-   service category. Suggest we map this in `docs/seed-data-raw.json` per
+   service category. Suggest we map this in `docs/seed-data/raw.json` per
    service.
 4. **What's the timeout for "awaiting_email"?** If a customer never sends
    the email, do we follow up after 24h / 48h / 1 week, then mark dropped?

@@ -1,5 +1,9 @@
 #!/bin/sh
-# No-op build script — Coolify Nixpacks bridge expects /artifacts/build.sh even
-# when using the Dockerfile build pack. This exits cleanly so the deployment
-# proceeds past the spurious build.sh check. kos shere  nist ?
+# Intentional no-op.
+#
+# This repo deploys via the Dockerfile build pack, but Coolify's Nixpacks
+# bridge still probes for /artifacts/build.sh and fails the deployment if it
+# is missing. Exiting 0 satisfies that check and lets the Docker build proceed.
+#
+# Nothing is built here. The real build is `next build` inside the Dockerfile.
 exit 0

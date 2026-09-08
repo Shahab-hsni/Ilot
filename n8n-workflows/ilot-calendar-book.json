@@ -1,0 +1,247 @@
+{
+  "id": "KB1esFv6zhbDHTkK",
+  "name": "Ilot - Calendar Book (sub)",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "when-called-book",
+      "name": "When Called"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Parse booking parameters and prepare Calendar event payload\nconst queryStr = $input.all()[0].json.query || '{}';\nlet params = {};\ntry {\n  params = JSON.parse(queryStr);\n} catch(e) {\n  // If not JSON, try to extract from natural language - but for now require JSON\n  return [{ json: { error: true, response: 'Could not parse booking parameters. Need JSON: {\"datetime_iso\":\"...\",\"customer_name\":\"...\"}' } }];\n}\n\nconst datetime_iso = params.datetime_iso || params.datetime || '';\nconst customer_name = params.customer_name || params.name || '';\nconst customer_phone = params.customer_phone || params.phone || '';\nconst customer_email = params.customer_email || params.email || '';\nconst service = params.service || '';\nconst notes = params.notes || '';\n\nconst TIMEZONE = 'Asia/Makassar';\nconst SLOT_MINUTES = 60;\nconst LOCATION = 'ILOT Legal Office, Bali';\n\nif (!datetime_iso || !customer_name) {\n  return [{ json: { error: true, response: 'Missing required info. Need datetime_iso and customer_name.' } }];\n}\n\nconst startTime = new Date(datetime_iso);\nconst endTime = new Date(startTime.getTime() + SLOT_MINUTES * 60 * 1000);\n\nconst summary = 'Consultation: ' + customer_name + (service ? ' \u2014 ' + service : '');\nconst description = [\n  'Customer: ' + customer_name,\n  customer_phone ? 'WhatsApp: +' + customer_phone : '',\n  customer_email ? 'Email: ' + customer_email : '',\n  service ? 'Service: ' + service : '',\n  notes ? 'Notes: ' + notes : ''\n].filter(Boolean).join('\\n');\n\nconst eventBody = {\n  summary: summary,\n  description: description,\n  location: LOCATION,\n  start: { dateTime: startTime.toISOString(), timeZone: TIMEZONE },\n  end: { dateTime: endTime.toISOString(), timeZone: TIMEZONE },\n  attendees: customer_email ? [{ email: customer_email }] : [],\n  reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 60 }, { method: 'popup', minutes: 15 }] }\n};\n\n// Format date for display\nconst OFFSET_MS = 8 * 60 * 60 * 1000;\nconst wita = new Date(startTime.getTime() + OFFSET_MS);\nconst days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\nconst months = ['January','February','March','April','May','June','July','August','September','October','November','December'];\nconst dayName = days[wita.getUTCDay()];\nconst dateStr = months[wita.getUTCMonth()] + ' ' + wita.getUTCDate() + ', ' + wita.getUTCFullYear();\nconst h = wita.getUTCHours();\nconst ampm = h >= 12 ? 'PM' : 'AM';\nconst h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);\nconst timeStr = String(h12) + ':' + String(wita.getUTCMinutes()).padStart(2,'0') + ' ' + ampm + ' WITA';\nconst dateTimeFormatted = dayName + ', ' + dateStr + ' at ' + timeStr;\n\nreturn [{ json: { error: false, eventBody: eventBody, startTime: startTime.toISOString(), customer_name: customer_name, customer_email: customer_email, service: service, dateTimeFormatted: dateTimeFormatted } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "parse-booking",
+      "name": "Parse Booking"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-no-error",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "check-valid",
+      "name": "Valid Params?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleCalendarOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.eventBody) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "id": "create-event",
+      "name": "Create Calendar Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "EtGFnzyHrPfP7Bkf",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Format successful booking confirmation\nconst calResp = $input.all()[0].json;\nconst bookingData = $('Parse Booking').all()[0].json;\nconst startTime = new Date(bookingData.startTime);\n\nconst OFFSET_MS = 8 * 60 * 60 * 1000;\nconst wita = new Date(startTime.getTime() + OFFSET_MS);\nconst days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\nconst months = ['January','February','March','April','May','June','July','August','September','October','November','December'];\nconst dayName = days[wita.getUTCDay()];\nconst dateStr = months[wita.getUTCMonth()] + ' ' + wita.getUTCDate() + ', ' + wita.getUTCFullYear();\nconst h = wita.getUTCHours();\nconst ampm = h >= 12 ? 'PM' : 'AM';\nconst h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);\nconst timeStr = String(h12) + ':' + String(wita.getUTCMinutes()).padStart(2,'0') + ' ' + ampm + ' WITA';\n\nconst msg = `Meeting booked successfully!\n\nDate: ${dayName}, ${dateStr}\nTime: ${timeStr}\nLocation: ILOT Legal Office, Bali\nCustomer: ${bookingData.customer_name}${bookingData.service ? '\\nService: ' + bookingData.service : ''}\n\nA calendar invite has been created. Please confirm to the customer that their consultation is booked.`;\n\nreturn [{ json: { response: msg, dateTimeFormatted: dayName + ', ' + dateStr + ' at ' + timeStr } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "id": "format-confirmation",
+      "name": "Format Confirmation"
+    },
+    {
+      "parameters": {
+        "fromEmail": "legal.admin@ilotpropertybali.com",
+        "toEmail": "={{ $('Parse Booking').item.json.customer_email }}",
+        "subject": "Your ILOT Legal Consultation is Confirmed",
+        "emailType": "html",
+        "html": "<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;\">\n  <h2 style=\"color: #1a365d;\">Consultation Confirmed</h2>\n  <p>Hi ={{ $('Parse Booking').item.json.customer_name }},</p>\n  <p>Your consultation at ILOT Legal has been confirmed. Here are the details:</p>\n  <table style=\"border-collapse: collapse; width: 100%; margin: 20px 0;\">\n    <tr><td style=\"padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;\">Date and Time</td><td style=\"padding: 8px; border-bottom: 1px solid #eee;\">={{ $('Parse Booking').item.json.dateTimeFormatted }}</td></tr>\n    <tr><td style=\"padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;\">Duration</td><td style=\"padding: 8px; border-bottom: 1px solid #eee;\">1 hour</td></tr>\n    <tr><td style=\"padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;\">Location</td><td style=\"padding: 8px; border-bottom: 1px solid #eee;\">ILOT Legal Office, Bali</td></tr>\n  </table>\n  <p>A Google Calendar invite has also been sent to this email address.</p>\n  <p>If you need to reschedule or cancel, please reply to this email or message us on WhatsApp.</p>\n  <br>\n  <p>Best regards,<br><strong>ILOT Legal Team</strong></p>\n  <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n  <p style=\"font-size: 12px; color: #666;\">ILOT Property Legal | Bali, Indonesia</p>\n</div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1200,
+        -40
+      ],
+      "id": "email001-send-confirmation",
+      "name": "Send Confirmation Email",
+      "credentials": {
+        "smtp": {
+          "id": "fppQBltXypbJXeDg",
+          "name": "Ilot - legal@ Gmail SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": ""
+          },
+          "conditions": [
+            {
+              "id": "email-check-1",
+              "leftValue": "={{ $('Parse Booking').item.json.customer_email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        32
+      ],
+      "id": "email002-if-has-email",
+      "name": "Has Email?"
+    }
+  ],
+  "connections": {
+    "When Called": {
+      "main": [
+        [
+          {
+            "node": "Parse Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Booking": {
+      "main": [
+        [
+          {
+            "node": "Valid Params?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Params?": {
+      "main": [
+        [
+          {
+            "node": "Create Calendar Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Calendar Event": {
+      "main": [
+        [
+          {
+            "node": "Has Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Confirmation Email": {
+      "main": [
+        [
+          {
+            "node": "Format Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Email?": {
+      "main": [
+        [
+          {
+            "node": "Send Confirmation Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": [],
+  "meta": {
+    "exportedFrom": "activeVersion",
+    "exportedAt": "2026-08-31",
+    "sourceVersionId": "ebab27b5-365b-485a-b305-a20275c4e7b0",
+    "draftMatchesPublished": true,
+    "note": "Read from n8n.ilotlegal.com via the public API. Production runs activeVersion, not the top-level draft nodes."
+  },
+  "versionId": "ebab27b5-365b-485a-b305-a20275c4e7b0"
+}

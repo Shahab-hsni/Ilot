@@ -17,11 +17,10 @@ const LEGAL_LINKS = [
   { href: '/privacy', label: 'Privacy Policy' },
 ]
 
-// PLACEHOLDER hrefs — replace with the client's real social profile URLs.
 const SOCIALS = [
-  { Icon: Instagram, label: 'Instagram', href: '#' },
-  { Icon: Facebook, label: 'Facebook', href: '#' },
-  { Icon: Linkedin, label: 'LinkedIn', href: '#' },
+  { Icon: Instagram, label: 'Instagram', href: 'https://www.instagram.com/ilotlegal/' },
+  { Icon: Facebook, label: 'Facebook', href: 'https://www.facebook.com/profile.php?id=61565301002621' },
+  { Icon: Linkedin, label: 'LinkedIn', href: 'https://www.linkedin.com/in/ilot-legal-4ab844423/' },
 ]
 
 const OFFICES = [

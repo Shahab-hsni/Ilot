@@ -3,7 +3,7 @@
  * from Sanity that are no longer present in the current seed data.
  *
  * Safe to run repeatedly — it only deletes documents whose _id is NOT in the
- * expected set derived from docs/seed-data-raw.json.
+ * expected set derived from docs/seed-data/raw.json.
  *
  * Usage:
  *   npm run cleanup:sanity          → delete orphans
@@ -19,8 +19,8 @@ import type { ClientDataRow } from './lib/types'
 
 const DRY_RUN = process.argv.includes('--dry-run')
 const ROOT = path.resolve(__dirname, '..')
-const CLIENT_DATA_PATH = path.join(ROOT, 'docs/seed-data-raw.json')
-const SEED_SQL_PATH = path.join(ROOT, 'supabase/seed.sql')
+const CLIENT_DATA_PATH = path.join(ROOT, 'docs/seed-data/raw.json')
+const SEED_SQL_PATH = path.join(ROOT, 'docs/seed-data/legacy-categories.sql')
 
 function requireEnv(name: string): string {
   const v = process.env[name]

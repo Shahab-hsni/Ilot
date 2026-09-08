@@ -1,0 +1,577 @@
+{
+  "id": "Lgrc2W90RxRo0EPG",
+  "name": "Ilot - Commitment Gate (#4)",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "commitment-gate-email",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "webhook-trigger-wf4-001",
+      "name": "Webhook: New Email",
+      "webhookId": "commitment-gate-webhook-001"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract fields from webhook body into top-level $json\nconst body = $json.body || $json;\nreturn [{\n  json: {\n    from_email: body.from_email || '',\n    subject: body.subject || '',\n    token: body.token || null,\n    message_id: body.message_id || '',\n    attachments: body.attachments || [],\n    attachmentCount: body.attachmentCount || 0,\n    validAttachment: body.validAttachment || null,\n    docsValid: body.docsValid || false\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        0
+      ],
+      "id": "extract001-0000-4aaa-bbbb-extractfields1",
+      "name": "Extract Email Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "docsvalid-check",
+              "leftValue": "={{ $('Extract Email Fields').first().json.docsValid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1200,
+        -80
+      ],
+      "id": "docsvalid1-0000-4aaa-bbbb-docsvalidif001",
+      "name": "Docs Valid?"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "getAll",
+        "workspaceId": "wwhn1cbz",
+        "projectId": "pkm6hqm4mh9vj0s",
+        "table": "m1q8u8q393tf6ej",
+        "returnAll": false,
+        "limit": 1,
+        "options": {
+          "where": "=(commitment_token,eq,{{ $('Extract Email Fields').first().json.token }})~and(commitment_status,eq,awaiting_email)"
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 3,
+      "position": [
+        800,
+        0
+      ],
+      "id": "getclient1-0000-4aaa-bbbb-getclientrow01",
+      "name": "Find Client by Token",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "KiRKfHvdvcKwu1AQ",
+          "name": "NocoDB Token account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "rowfound-check",
+              "leftValue": "={{ $json.Id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1000,
+        0
+      ],
+      "id": "rowfound01-0000-4aaa-bbbb-rowfoundif0001",
+      "name": "Client Matched?"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "update",
+        "workspaceId": "wwhn1cbz",
+        "projectId": "pkm6hqm4mh9vj0s",
+        "table": "m1q8u8q393tf6ej",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldName": "Id",
+              "fieldValue": "={{ $('Find Client by Token').first().json.Id }}"
+            },
+            {
+              "fieldName": "commitment_status",
+              "fieldValue": "committed"
+            },
+            {
+              "fieldName": "committed_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            },
+            {
+              "fieldName": "Status",
+              "fieldValue": "CONTACTED"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 3,
+      "position": [
+        1400,
+        -160
+      ],
+      "id": "updcommit1-0000-4aaa-bbbb-updcommitrow01",
+      "name": "Mark Committed",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "KiRKfHvdvcKwu1AQ",
+          "name": "NocoDB Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": "wwhn1cbz",
+        "projectId": "pkm6hqm4mh9vj0s",
+        "table": "mx9k2n7fxp1zax1",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldName": "message_id",
+              "fieldValue": "={{ $('Extract Email Fields').first().json.message_id }}"
+            },
+            {
+              "fieldName": "from_email",
+              "fieldValue": "={{ $('Extract Email Fields').first().json.from_email }}"
+            },
+            {
+              "fieldName": "token",
+              "fieldValue": "={{ $('Extract Email Fields').first().json.token }}"
+            },
+            {
+              "fieldName": "result",
+              "fieldValue": "committed"
+            },
+            {
+              "fieldName": "processed_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 3,
+      "position": [
+        1600,
+        -160
+      ],
+      "id": "logproc001-0000-4aaa-bbbb-logprocessed01",
+      "name": "Log Processed (committed)",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "KiRKfHvdvcKwu1AQ",
+          "name": "NocoDB Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": "Ez08kr0HLdziPPwy",
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "customer_id": "={{ $('Find Client by Token').first().json.Id }}",
+            "department": "={{ $('Find Client by Token').first().json.Department }}",
+            "service": "={{ $('Find Client by Token').first().json.Service }}",
+            "customer_name": "={{ $('Find Client by Token').first().json.Name }}",
+            "customer_phone": "={{ $('Find Client by Token').first().json.Phone }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1800,
+        -160
+      ],
+      "id": "trig5wf001-0000-4aaa-bbbb-triggerwf5node",
+      "name": "Trigger Assign Agent (#5)"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1231024886758816",
+        "recipientPhoneNumber": "={{ ($('Find Client by Token').first().json.Phone) }}",
+        "textBody": "=We received your email but couldn't read the documents. Please resend your passport + proof of address as a clear PDF or photo, keeping the same subject line [CASE-{{ $('Extract Email Fields').first().json.token || 'XXXX' }}].",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        1400,
+        40
+      ],
+      "id": "rejectwa01-0000-4aaa-bbbb-rejectwhatsapp1",
+      "name": "WhatsApp: Resend Please",
+      "webhookId": "cc22dd33-4444-4eee-ffff-rejectwahook001",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "o6dqNLf1TgJgnOIW",
+          "name": "WhatsApp account"
+        }
+      },
+      "notes": "Best-effort: if docs invalid we may not have matched a client row, so phone may be blank. If blank, this send is skipped by Meta. Consider matching token first for a reliable phone.",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": "wwhn1cbz",
+        "projectId": "pkm6hqm4mh9vj0s",
+        "table": "mx9k2n7fxp1zax1",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldName": "message_id",
+              "fieldValue": "={{ $('Extract Email Fields').first().json.message_id }}"
+            },
+            {
+              "fieldName": "from_email",
+              "fieldValue": "={{ $('Extract Email Fields').first().json.from_email }}"
+            },
+            {
+              "fieldName": "token",
+              "fieldValue": "={{ $('Extract Email Fields').first().json.token }}"
+            },
+            {
+              "fieldName": "result",
+              "fieldValue": "rejected_invalid_docs"
+            },
+            {
+              "fieldName": "processed_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 3,
+      "position": [
+        1600,
+        40
+      ],
+      "id": "logrej0001-0000-4aaa-bbbb-logrejected001",
+      "name": "Log Processed (rejected)",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "KiRKfHvdvcKwu1AQ",
+          "name": "NocoDB Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "version": 3,
+        "resource": "row",
+        "operation": "getAll",
+        "workspaceId": "wwhn1cbz",
+        "projectId": "pkm6hqm4mh9vj0s",
+        "table": "mx9k2n7fxp1zax1",
+        "returnAll": false,
+        "limit": 1,
+        "downloadAttachments": false,
+        "options": {
+          "where": "=(message_id,eq,{{ $json.message_id }})"
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 3,
+      "position": [
+        400,
+        0
+      ],
+      "id": "dedupget01-0000-4aaa-bbbb-dedupgetrow001",
+      "name": "Already Processed?",
+      "alwaysOutputData": true,
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "KiRKfHvdvcKwu1AQ",
+          "name": "NocoDB Token account"
+        }
+      },
+      "notes": "Idempotency: look up processed_emails by message_id. alwaysOutputData=true so an empty result still emits one empty item."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dedup-empty-check",
+              "leftValue": "={{ $json.message_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        600,
+        0
+      ],
+      "id": "isnew0001-0000-4aaa-bbbb-isnewcheck0001",
+      "name": "Is New Email?",
+      "notes": "TRUE = no processed_emails row found (empty item from lookup) -> proceed. FALSE = duplicate -> stop."
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "create",
+        "workspaceId": "wwhn1cbz",
+        "projectId": "pkm6hqm4mh9vj0s",
+        "table": "mx9k2n7fxp1zax1",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldName": "message_id",
+              "fieldValue": "={{ $('Extract Email Fields').first().json.message_id }}"
+            },
+            {
+              "fieldName": "from_email",
+              "fieldValue": "={{ $('Extract Email Fields').first().json.from_email }}"
+            },
+            {
+              "fieldName": "token",
+              "fieldValue": "={{ $('Extract Email Fields').first().json.token }}"
+            },
+            {
+              "fieldName": "result",
+              "fieldValue": "rejected_no_client_match"
+            },
+            {
+              "fieldName": "processed_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 3,
+      "position": [
+        1200,
+        200
+      ],
+      "id": "lognomatch-0000-4aaa-bbbb-lognomatch001",
+      "name": "Log Processed (no match)",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "KiRKfHvdvcKwu1AQ",
+          "name": "NocoDB Token account"
+        }
+      },
+      "notes": "Email had a CASE token but no client row in awaiting_email matched it (wrong/expired token or already committed)."
+    }
+  ],
+  "connections": {
+    "Webhook: New Email": {
+      "main": [
+        [
+          {
+            "node": "Extract Email Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Email Fields": {
+      "main": [
+        [
+          {
+            "node": "Already Processed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already Processed?": {
+      "main": [
+        [
+          {
+            "node": "Is New Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is New Email?": {
+      "main": [
+        [
+          {
+            "node": "Find Client by Token",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Find Client by Token": {
+      "main": [
+        [
+          {
+            "node": "Client Matched?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Matched?": {
+      "main": [
+        [
+          {
+            "node": "Docs Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Processed (no match)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Docs Valid?": {
+      "main": [
+        [
+          {
+            "node": "Mark Committed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "WhatsApp: Resend Please",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Committed": {
+      "main": [
+        [
+          {
+            "node": "Log Processed (committed)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Processed (committed)": {
+      "main": [
+        [
+          {
+            "node": "Trigger Assign Agent (#5)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp: Resend Please": {
+      "main": [
+        [
+          {
+            "node": "Log Processed (rejected)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": [],
+  "meta": {
+    "exportedFrom": "activeVersion",
+    "exportedAt": "2026-08-31",
+    "sourceVersionId": "4d2ee100-bf83-4aaa-bdd2-ff934c55706a",
+    "draftMatchesPublished": true,
+    "note": "Read from n8n.ilotlegal.com via the public API. Production runs activeVersion, not the top-level draft nodes."
+  },
+  "versionId": "4d2ee100-bf83-4aaa-bdd2-ff934c55706a"
+}

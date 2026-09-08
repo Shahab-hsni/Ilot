@@ -27,8 +27,14 @@ export const metadata: Metadata = {
     locale: 'en_US',
     type: 'website',
   },
-  // Meta Business Manager domain verification for ilotlegal.com. Emitted into
-  // <head> at build time — Meta's crawler ignores anything injected by JS.
+  // Google Search Console. Next has a first-class field for this one, which emits
+  // <meta name="google-site-verification" ...>.
+  verification: {
+    google: 'UOBl5YaACKudXXZLHUcwCenEbGPtJuEqwCizzITt5Q4',
+  },
+  // Meta Business Manager domain verification for ilotlegal.com. No first-class
+  // field exists for it, hence `other`. Emitted into <head> at build time — both
+  // crawlers ignore anything injected by JS.
   other: {
     'facebook-domain-verification': '495tue946uav6fkn72wbt5r2ug0axu',
   },

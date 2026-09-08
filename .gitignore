@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# editor
+.vscode/
+.idea/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -38,6 +42,10 @@ pnpm-lock.yaml
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...except the committed template. Without this negation `.env*` matches it
+# too, and it stays visible only because it was added before the rule — delete
+# and recreate it and git stops tracking it silently.
+!.env.example
 
 # vercel
 .vercel
@@ -46,9 +54,16 @@ pnpm-lock.yaml
 *.tsbuildinfo
 next-env.d.ts
 
+# python bytecode (scripts/generate-seed.py)
+__pycache__/
+*.py[cod]
+
 # claude code local settings
 .claude/
 
 # local AI agent tooling (Codex notes, skills) — keep local, do not commit
 .agents/
 AGENTS.md
+
+# local AI agent scratch dirs — keep local, do not commit
+.superpowers/

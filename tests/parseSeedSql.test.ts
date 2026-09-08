@@ -38,8 +38,8 @@ describe('parseSeedSqlCategories', () => {
     expect(parseSeedSqlCategories('-- empty')).toEqual([])
   })
 
-  it('parses real supabase/seed.sql categories block', () => {
-    const seedFile = path.resolve(__dirname, '../supabase/seed.sql')
+  it('parses the real legacy categories SQL block', () => {
+    const seedFile = path.resolve(__dirname, '../docs/seed-data/legacy-categories.sql')
     const sql = fs.readFileSync(seedFile, 'utf-8')
     const result = parseSeedSqlCategories(sql)
 
@@ -52,7 +52,7 @@ describe('parseSeedSqlCategories', () => {
         'legal',
         'company-setup',
         'insurance',
-        'property',
+        'property-advisory',
         'hr-payroll',
         'accounting-tax',
       ])

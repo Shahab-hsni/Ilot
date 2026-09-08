@@ -1,5 +1,7 @@
 {
+  "id": "EHTyQZSnZMZsespF",
   "name": "Ilot - Inbound Whatsapp",
+  "active": true,
   "nodes": [
     {
       "parameters": {
@@ -11,8 +13,8 @@
       "type": "n8n-nodes-base.whatsAppTrigger",
       "typeVersion": 1,
       "position": [
-        -176,
-        32
+        -368,
+        16
       ],
       "id": "a261e4a0-e0f5-49eb-ba2a-be5986111eba",
       "name": "WhatsApp Trigger",
@@ -27,7 +29,7 @@
     {
       "parameters": {
         "operation": "send",
-        "phoneNumberId": "1063131786890917",
+        "phoneNumberId": "1231024886758816",
         "recipientPhoneNumber": "={{ $('Parse Lead Datat').item.json.phone }}\n",
         "textBody": "={{ $('Parse Lead Datat').item.json.cleanReply }}\n",
         "additionalFields": {}
@@ -35,8 +37,8 @@
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        1120,
-        192
+        848,
+        160
       ],
       "id": "e6abdc56-8b73-4ae2-8567-f18486a6233a",
       "name": "Send message",
@@ -53,7 +55,7 @@
         "promptType": "define",
         "text": "={{ $json.messages[0].text.body }}",
         "options": {
-          "systemMessage": "You are the ILOT Legal virtual assistant on WhatsApp. You help expatriates,\nforeign investors, and global businesses with legal, visa, and corporate\nstructuring services in Indonesia.\n\nYOUR JOB\n1. Greet warmly, briefly.\n2. Identify which service the client needs.\n3. Through natural conversation collect:\n   - Full name\n   - Nationality\n   - Which service they need\n4. Answer simple FAQs (expected timeline, general process).\n5. Once you have name + nationality + service, hand off to a human\n   specialist.\n\nSERVICES YOU KNOW ABOUT (do not invent others)\n• VISA: Investor KITAS (6–10 wks), Working KITAS (6–10 wks), Digital\n  Nomad KITAS (6–10 wks), Retirement KITAS, Visit Visa 60/180 days\n  (2–4 wks), Exit Permit Only, eVoA 60 days.\n• COMPANY SETUP: PT PMA (6–12 wks), PT Local (4–8 wks), PT Local\n  Hospitality, NIB / OSS (1–3 wks), CV Set-up, PT Perorangan.\n• LEGAL & COMPLIANCE: BKPM / LKPM reports, Document Review by Lawyer\n  (3–7 days), Shareholder Agreement (1–3 wks), Prenuptial / Postnuptial\n  Agreement, Employment Contract drafting, RUPS (general meeting),\n  Company Legal Documents Review.\n• TAX & ADMIN: NPWP Personal, NPWP Company (1–2 wks), Sworn Translation,\n  Company Valuation, Land Due Diligence.\n\nRULES (follow strictly)\n- If the user's first message already contains a specific service from the list above (e.g. \"I'd like to learn more about your *PT PMA setup* service\"), treat the service as __already collected__ — do NOT ask for it again. Move directly to asking for their full name and nationality. The user came from a website button that pre-filled the service for them, so re-asking feels broken.\n- Reply in SHORT messages. Max 2–3 sentences per reply. This is WhatsApp.\n- Reply in English only, unless the user writes in Bahasa Indonesia.\n- Be warm but professional. Plain English. No legal jargon.\n- NEVER quote prices, timelines more specific than what's listed above,\n  or specific legal advice. Deflect with \"our specialist will confirm\n  exact figures when they reach out.\"\n- NEVER promise outcomes or approvals.\n- If the client asks about a service NOT in the list, acknowledge it\n  politely and say the specialist will confirm whether Ilot handles it.\n\nWHEN TO HAND OFF\nIf the user's first message contains the service AND their name AND nationality, you have everything you need on turn 1. Reply with the handoff text and the `###LEAD_DATA###` block immediately — do not ask follow-up questions.\n\nThe moment you have:\n  1. The client's full name\n  2. Their nationality\n  3. The service they want\n\nInclude this EXACT marker block at the very END of your next reply, on\nits own lines, with NOTHING between the markers except a single valid\nJSON object:\n\n###LEAD_DATA###\n{\"name\":\"<full name>\",\"nationality\":\"<country>\",\"service\":\"<service>\",\"department\":\"visa|legal|company|tax|property|hr|insurance\",\"summary\":\"<one short sentence summarising their situation>\"}\n###END_LEAD_DATA###\n\nMap the service to one of these departments:\n  visa        → any KITAS, Visit Visa, eVoA, Exit Permit, MREP\n  company     → PT PMA, PT Local, PT Perorangan, NIB, CV, OSS\n  legal       → document review, shareholder / prenup / employment\n                agreements, BKPM reports, compliance, notary, RUPS\n  tax         → NPWP, tax filing, audit, valuation\n  property    → land due diligence\n  hr          → (rare — EOR, recruitment)\n  insurance   → (rare — health, business, property insurance)\n\nIf the client is still exploring and you don't yet have all three pieces\nof info, DO NOT include the marker block. Keep the conversation natural.\n\nEXAMPLES\n\n<example 1 — first message has the service>\nUser: \"Hi, I want Investor KITAS\"\nYou: \"Hi! Great, we help many investors with the Investor KITAS. Could I\n  get your name and nationality so I can connect you with the right\n  specialist?\"\n\n<example 2 — second message completes the lead>\nUser: \"Marcus Weber, German\"\nYou: \"Thanks Marcus! I've passed this to our visa team — a specialist\n  will reach out shortly. 🙏\n\n  ###LEAD_DATA###\n  {\"name\":\"Marcus Weber\",\"nationality\":\"German\",\"service\":\"Investor KITAS\",\"department\":\"visa\",\"summary\":\"German investor wants Investor KITAS.\"}\n  ###END_LEAD_DATA###\"\n\n<example 3 — open-ended inquiry>\nUser: \"I want to move my family to Bali\"\nYou: \"Happy to help — a few options depending on whether you want to\n  invest, retire, or work remotely. Which fits best: investor,\n  retirement, or digital nomad?\"\n(No marker block — don't know the service yet.)\n",
+          "systemMessage": "\u26a0\ufe0f ABSOLUTE RULES (violation = system failure):\n1. NEVER mention email, documents, subject lines, case tokens, or upload instructions.\n2. NEVER say \"send your documents by email\" or \"instructions we will provide.\"\n3. NEVER discuss what happens after lead capture \u2014 the system handles that silently.\n4. Your ONLY goal: collect name + nationality + service. Nothing else.\n5. The MOMENT you have all three pieces, DO NOT call any tools (no FAQ search, no calendar check). Respond ONLY with a one-sentence confirmation + the ###LEAD_DATA### block. Example: \"Perfect, Pouya! We're setting things up for your Digital Nomad KITAS now. \ud83c\udf89\" followed by the block.\n6. Keep ALL replies under 3 sentences. No walls of text. Never repeat information.\n\nYou are the ILOT Legal virtual assistant on WhatsApp. You help expatriates,\nforeign investors, and global businesses with legal, visa, and corporate\nstructuring services in Indonesia.\n\nYOUR JOB\n1. Greet warmly, briefly.\n2. Ask the customer: would they like to **book a consultation meeting** at our Bali office, or would they prefer to proceed via chat?\n3. If they want a MEETING \u2192 use the check_calendar_availability tool, present slots, and book with book_meeting once they choose.\n4. If they want to proceed via CHAT \u2192 identify which service they need, collect name + nationality + service through natural conversation.\n5. Answer simple FAQs (expected timeline, general process) using the search_ilot_faqs tool.\n6. If you have 2 of the 3 pieces (name/nationality/service), proactively ask for the missing one. Do NOT discuss documents, email, or process steps until all 3 are collected.\n7. Once you have ALL THREE (name + nationality + service), include the ###LEAD_DATA### block at the end of your reply. The system takes over from there \u2014 you do NOT need to explain next steps.\n\nMEETING BOOKING FLOW\n- When the customer wants a meeting, call check_calendar_availability (optionally with their preferred_date if they mention one).\n- Present the slots as a simple numbered list (just day, date, and time \u2014 do NOT show the [ref:...] part to the customer).\n- When they pick a slot, you'll need their name AND email address first (if you don't have them yet). Ask for both before booking.\n- Once you have the slot, name, and email, call book_meeting with the ISO timestamp from the ref, their name, email, phone, and service.\n- After booking, confirm: date, time, duration (1 hour), and location (ILOT Legal Office, Bali). Let them know a confirmation email has been sent to their address.\n- Let them know they can message back here if they need to reschedule.\n\nSERVICES YOU KNOW ABOUT (do not invent others)\n\u2022 VISA: Investor KITAS (6\u201310 wks), Working KITAS (6\u201310 wks), Digital\n  Nomad KITAS (6\u201310 wks), Retirement KITAS, Visit Visa 60/180 days\n  (2\u20134 wks), Exit Permit Only, eVoA 60 days.\n\u2022 COMPANY SETUP: PT PMA (6\u201312 wks), PT Local (4\u20138 wks), PT Local\n  Hospitality, NIB / OSS (1\u20133 wks), CV Set-up, PT Perorangan.\n\u2022 LEGAL & COMPLIANCE: BKPM / LKPM reports, Document Review by Lawyer\n  (3\u20137 days), Shareholder Agreement (1\u20133 wks), Prenuptial / Postnuptial\n  Agreement, Employment Contract drafting, RUPS (general meeting),\n  Company Legal Documents Review.\n\u2022 TAX & ADMIN: NPWP Personal, NPWP Company (1\u20132 wks), Sworn Translation,\n  Company Valuation, Land Due Diligence.\n\nRULES (follow strictly)\n- If the user's first message already contains a specific service from the list above (e.g. \"I'd like to learn more about your *PT PMA setup* service\"), treat the service as __already collected__ \u2014 do NOT ask for it again. Move directly to asking if they'd like to book a meeting or proceed via chat.\n- Reply in SHORT messages. Max 2\u20133 sentences per reply. This is WhatsApp.\n- Reply in English only, unless the user writes in Bahasa Indonesia.\n- Be warm but professional. Plain English. No legal jargon.\n- NEVER quote prices, timelines more specific than what's listed above,\n  or specific legal advice. Deflect with \"your assigned case officer will confirm\n  exact figures once your case is opened.\"\n- NEVER promise outcomes or approvals.\n- If the client asks about a service NOT in the list, acknowledge it\n  politely and say the specialist will confirm whether Ilot handles it.\n\nWHEN TO HAND OFF (chat path only \u2014 NOT for meeting bookings)\nIf the user's first message contains the service AND their name AND nationality, you have everything you need on turn 1. Reply with the handoff text and the `###LEAD_DATA###` block immediately \u2014 do not ask follow-up questions.\n\nThe moment you have:\n  1. The client's full name\n  2. Their nationality\n  3. The service they want\n\nInclude this EXACT marker block at the very END of your next reply, on\nits own lines, with NOTHING between the markers except a single valid\nJSON object:\n\n###LEAD_DATA###\n{\"name\":\"<full name>\",\"nationality\":\"<country>\",\"service\":\"<service>\",\"department\":\"visa|legal|company|tax|property|hr|insurance\",\"summary\":\"<one short sentence summarising their situation>\"}\n###END_LEAD_DATA###\n\nMap the service to one of these departments:\n  visa        \u2192 any KITAS, Visit Visa, eVoA, Exit Permit, MREP\n  company     \u2192 PT PMA, PT Local, PT Perorangan, NIB, CV, OSS\n  legal       \u2192 document review, shareholder / prenup / employment\n                agreements, BKPM reports, compliance, notary, RUPS\n  tax         \u2192 NPWP, tax filing, audit, valuation\n  property    \u2192 land due diligence\n  hr          \u2192 (rare \u2014 EOR, recruitment)\n  insurance   \u2192 (rare \u2014 health, business, property insurance)\n\nIf the client is still exploring and you don't yet have all three pieces\nof info, DO NOT include the marker block. Keep the conversation natural.\n\nIMPORTANT: Do NOT include the ###LEAD_DATA### block for meeting bookings.\nMeeting bookings are handled entirely through the calendar tools. Only use\nthe lead data block for the chat-based qualification path.\n\nEXAMPLES\n\n<example 1 \u2014 greeting with meeting option>\nUser: \"Hi\"\nYou: \"Hi! \ud83d\udc4b Welcome to ILOT Legal. I can help you with visa, company setup, legal, and tax services in Indonesia.\n\nWould you like to book a consultation at our Bali office, or shall we chat about your needs here?\"\n\n<example 2 \u2014 user wants a meeting>\nUser: \"I'd like to come in for a meeting about PT PMA\"\nYou: \"Great choice! Let me check our availability...\"\n[calls check_calendar_availability]\n\"Here are our available slots this week:\n\n1. Mon Jun 16, 09:00 AM\n2. Mon Jun 16, 10:00 AM\n3. Tue Jun 17, 02:00 PM\n...\n\nWhich time works best for you? And could I get your full name for the booking?\"\n\n<example 3 \u2014 user picks a slot>\nUser: \"Option 3 please. My name is Hans Mueller\"\nYou: \"Thanks Hans! Could you also share your email address? We'll send a confirmation there.\"\nUser: \"hans@example.com\"\n[calls book_meeting with the ref timestamp, name, email, phone from trigger]\n\"All confirmed, Hans! \u2705\n\n\ud83d\udcc5 Tuesday, June 17, 2026\n\ud83d\udd51 2:00 PM (Bali time)\n\u23f1 1 hour\n\ud83d\udccd ILOT Legal Office, Bali\n\nWe look forward to meeting you! Message us here if you need to reschedule.\"\n\n<example 4 \u2014 user prefers chat>\nUser: \"I'll just chat here thanks\"\nYou: \"No problem! What can I help you with today \u2014 visa, company setup, legal, or tax?\"\n\n<example 5 \u2014 first message has the service (chat path)>\nUser: \"Hi, I want Investor KITAS\"\nYou: \"Hi! We help many investors with the Investor KITAS.\n\nWould you like to book a consultation at our Bali office, or shall we proceed here via chat?\"\n\n\nAFTER THE COMMITMENT ASK IS SENT (critical \u2014 follow strictly)\nOnce the system has collected the user's name, nationality, and service, a\nseparate automated process generates a CASE token and sends the email\ninstructions. From that point on:\n\n- If the user says they sent the email, or asks \"did you get it?\", or says\n  \"email sent\", respond:\n  \"We're checking for your email now. Once we confirm receipt and verify\n  the attachments, your case officer will be assigned automatically \u2014 you'll\n  hear from them right here on WhatsApp. No need to do anything else.\"\n\n- If the user asks how long it takes, say:\n  \"Usually within a few minutes. If you don't hear back within an hour,\n  double-check you used the exact subject line we gave you and that your\n  attachments are in PDF or photo format.\"\n\n- Do NOT confirm receipt of the email yourself. Do NOT say \"your specialist\n  will reach out soon\" or anything that implies a human has been notified.\n  The system confirms automatically only after verifying the email.\n\n- If the user asks what happens next, explain the process:\n  \"Our system checks that we received your email with the correct subject\n  line and valid attachments. Once confirmed, a case officer is assigned\n  and they'll message you here directly.\"\n\nKNOWLEDGE BASE (IMPORTANT)\n- You have a tool called \"search_ilot_faqs\". For ANY factual question about ILOT services \u2014 timelines, requirements, documents, fees, processes, what's included, eligibility \u2014 call this tool FIRST with the customer's question, then answer using ONLY what it returns. Do not invent specifics.\n- If the tool returns no close match, give a brief general answer and offer to connect a human specialist. Never fabricate prices, exact timelines, or legal specifics not in the FAQ results.\n- Keep using the conversation to collect name + nationality + service in parallel; answering an FAQ does not replace lead capture.",
           "maxIterations": 3
         }
       },
@@ -68,31 +70,35 @@
     },
     {
       "parameters": {
-        "modelName": "models/gemini-flash-latest",
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
         "options": {
-          "maxOutputTokens": 400,
+          "maxTokens": 600,
           "temperature": 0.4
         }
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
       "position": [
         -112,
         240
       ],
       "id": "377dc733-7ecc-48f2-86e4-1ab1e8785b32",
-      "name": "Google Gemini Chat Model",
+      "name": "OpenAI Chat Model",
       "credentials": {
-        "googlePalmApi": {
-          "id": "JjjWWqrKLljutcjM",
-          "name": "Google Gemini(PaLM) Api account"
+        "openAiApi": {
+          "id": "V1hPmTMXNION0sra",
+          "name": "OpenAi account"
         }
       }
     },
     {
       "parameters": {
         "sessionIdType": "customKey",
-        "sessionKey": "={{ $json.messages[0].from }}",
+        "sessionKey": "={{ $json.messages[0].from }}_v6",
         "contextWindowLength": 15
       },
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
@@ -165,7 +171,7 @@
               "fieldValue": "={{ $json.phone }}"
             },
             {
-              "fieldName": "=Name",
+              "fieldName": "Name",
               "fieldValue": "={{ $json.lead.name }}"
             },
             {
@@ -189,6 +195,14 @@
               "fieldValue": "NEW_LEAD"
             },
             {
+              "fieldName": "commitment_status",
+              "fieldValue": "awaiting_email"
+            },
+            {
+              "fieldName": "commitment_token",
+              "fieldValue": "={{ $json.commitment_token }}"
+            },
+            {
               "fieldName": "Created At",
               "fieldValue": "={{ new Date().toISOString() }}"
             }
@@ -198,8 +212,8 @@
       "type": "n8n-nodes-base.nocoDb",
       "typeVersion": 3,
       "position": [
-        944,
-        -96
+        1088,
+        -112
       ],
       "id": "20fbba60-42eb-4f43-ba62-d72223e5baf7",
       "name": "Create lead in NocoDB",
@@ -212,96 +226,142 @@
     },
     {
       "parameters": {
-        "name": "ILOT_Knowledge_Base",
-        "description": "Use this tool whenever the customer asks a fact-based question about ILOT's legal, visa, company-setup, tax, property, HR, or insurance services in Indonesia — for example timelines, processes, who qualifies, what documents are needed, what happens for edge cases like remote applicants. Input must be a fully-formed natural-language question in any language. Returns the most relevant FAQ answers from ILOT's knowledge base.",
-        "topK": 4
+        "description": "Search the ILOT Legal FAQ knowledge base for answers about Visa, Company Set-Up, HR & Payroll, Accounting & Tax, Insurance, and Legal & Contract Advisory services. Pass the customer's question or topic as the query. Use this BEFORE answering any factual question about ILOT services, timelines, requirements, documents, fees, or processes.",
+        "jsCode": "// ILOT FAQ knowledge-base tool.\n// The agent passes a natural-language `query`; we fetch active FAQs from\n// NocoDB live and return the best-matching Q&A pairs as plain text.\n//\n// Lexical scoring (no embeddings) is plenty for ~60 short rows and always\n// reflects the current NocoDB content. Edit a FAQ in NocoDB -> next message\n// sees it.\n\nconst NOCODB_BASE = 'https://nocodb.ilotlegal.com';\nconst TABLE = 'miltd46do8tcznj';\nconst TOKEN=*** // set in n8n env/vars; falls back below\n\nconst token = TOKEN || '__REDACTED_SEE_PRODUCTION_N8N__';\n\nconst url = `${NOCODB_BASE}/api/v2/tables/${TABLE}/records?where=${encodeURIComponent('(Active,eq,1)')}&limit=200&fields=${encodeURIComponent('Question,Answer,Department')}`;\n\nlet rows = [];\ntry {\n  const resp = await this.helpers.httpRequest({\n    method: 'GET',\n    url,\n    headers: { 'xc-token': token },\n    json: true,\n  });\n  rows = resp.list || [];\n} catch (e) {\n  return 'FAQ lookup temporarily unavailable.';\n}\n\nconst q = String(query || '').toLowerCase();\nconst stop = new Set(['the','a','an','is','are','do','does','i','to','of','for','and','what','how','can','my','in','on','you','your','with','at','it','this']);\nconst terms = q.split(/[^a-z0-9]+/).filter(t => t.length > 2 && !stop.has(t));\n\nfunction score(row) {\n  const hay = `${row.Question} ${row.Answer} ${row.Department}`.toLowerCase();\n  let s = 0;\n  for (const t of terms) {\n    if (hay.includes(t)) s += 1;\n    if (String(row.Question).toLowerCase().includes(t)) s += 1; // question match weighted\n  }\n  return s;\n}\n\nconst ranked = rows\n  .map(r => ({ r, s: score(r) }))\n  .filter(x => x.s > 0)\n  .sort((a, b) => b.s - a.s)\n  .slice(0, 3);\n\nif (ranked.length === 0) {\n  return 'No FAQ entry closely matches that. Answer from general knowledge of ILOT services, or offer to connect a human specialist.';\n}\n\nreturn ranked\n  .map(({ r }) => `[${r.Department}]\\nQ: ${r.Question}\\nA: ${r.Answer}`)\n  .join('\\n\\n---\\n\\n');"
       },
-      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        496
+      ],
+      "id": "faa00001-aaaa-4d7a-a5e1-000faqtoolcode",
+      "name": "Search FAQs"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Commitment-gate token generator.\n// Runs on the 'lead captured = true' branch. Generates a CASE-XXXX token,\n// builds the WhatsApp commitment-ask message, and carries forward the lead\n// fields so the NocoDB Create node and the Send node can both read them.\n\nfunction makeToken() {\n  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no confusing 0/O/1/I\n  let s = '';\n  for (let i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];\n  return s;\n}\n\nconst p = $json; // from Parse Lead Datat (reach-back preserved by connection)\nconst token = makeToken();\nconst caseId = 'CASE-' + token;\n\n// Per-service required docs. Extend this map as the Indonesia team confirms\n// the real doc list per service category (commitment-gate-flow.md open Q#3).\nconst DOCS_BY_DEPARTMENT = {\n  'VISA': ['Copy of passport (PDF or photo)', 'Proof of address (utility bill / bank statement)'],\n  'COMPANY SETUP': ['Copy of passport', 'Proposed company name(s)', 'Proof of address'],\n  'LEGAL': ['Copy of passport', 'The document(s) you want reviewed (PDF)'],\n  'TAX': ['Copy of passport', 'NPWP if you have one']\n};\nconst dept = (p.lead && p.lead.department ? String(p.lead.department) : '').toUpperCase();\nlet docs = DOCS_BY_DEPARTMENT[dept];\nif (!docs) docs = ['Copy of passport (PDF or photo)', 'Proof of address (utility bill / bank statement)'];\n\nconst docLines = docs.map(d => '   \\u2022 ' + d).join('\\n');\n\nconst askMessage =\n  'Great \\u2014 we\\u2019re ready to assign your case officer. \\ud83c\\udf89\\n\\n' +\n  'Please email the following to legal.admin@ilotpropertybali.com:\\n' +\n  docLines + '\\n\\n' +\n  'Use this exact subject line so we route it correctly:\\n' +\n  '   [' + caseId + ']\\n\\n' +\n  'The moment we receive it, your assigned officer will reply here on WhatsApp.';\n\nreturn {\n  json: {\n    ...p,\n    commitment_token: token,\n    case_id: caseId,\n    required_docs: docs,\n    commitment_status: 'awaiting_email',\n    askMessage\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        -112
+      ],
+      "id": "c0aa1111-1111-4aaa-bbbb-genTokenNode01",
+      "name": "Generate Case Token"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1231024886758816",
+        "recipientPhoneNumber": "={{ $('Generate Case Token').item.json.phone }}",
+        "textBody": "={{ $('Generate Case Token').item.json.askMessage }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
+      "position": [
+        1312,
+        -112
+      ],
+      "id": "aa55ee66-7777-4bbb-cccc-sendCommitAsk01",
+      "name": "Send commitment ask",
+      "webhookId": "bb11cc22-3333-4ddd-eeee-commitaskhook01",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "o6dqNLf1TgJgnOIW",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "check_calendar_availability",
+        "description": "Check available meeting slots at the ILOT Legal office in Bali for the next 7 business days. Call this when a customer wants to book a physical consultation meeting. Optionally pass a preferred date (YYYY-MM-DD) to start the search from that date. Returns numbered slots with timestamps.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "fbNF72OFmS0rRtuv"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
       "position": [
         208,
-        240
+        640
       ],
-      "id": "5e3f1b01-bbbb-4d7a-a5e1-0001kbtool",
-      "name": "ILOT Knowledge Base"
+      "id": "cal00001-aaaa-4b7a-a5e1-checkAvailTool",
+      "name": "Check Calendar Availability"
     },
     {
       "parameters": {
-        "mode": "load",
-        "memoryKey": "ilot-faqs",
+        "name": "book_meeting",
+        "description": "Book a consultation meeting at the ILOT Legal office. Call this AFTER the customer has chosen a specific time slot from check_calendar_availability results AND you have their name and email. Pass a JSON string with: datetime_iso (the ISO timestamp from the availability list), customer_name (required), customer_email (required), customer_phone (optional), service (optional), notes (optional).",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "KB1esFv6zhbDHTkK"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        400,
+        608
+      ],
+      "id": "cal00002-bbbb-4c8a-b6f2-bookMeetingTool",
+      "name": "Book Meeting"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "filter-msg-exists",
+              "leftValue": "={{ $json.messages }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
         "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
-      "typeVersion": 1.1,
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
       "position": [
-        288,
-        432
+        -176,
+        32
       ],
-      "id": "5e3f1b02-bbbb-4d7a-a5e1-0002vsread",
-      "name": "Simple Vector Store (read)"
-    },
-    {
-      "parameters": {
-        "modelName": "models/text-embedding-004"
-      },
-      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        368,
-        528
-      ],
-      "id": "5e3f1b03-bbbb-4d7a-a5e1-0003embreader",
-      "name": "Embeddings (read)",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "JjjWWqrKLljutcjM",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "modelName": "models/gemini-flash-latest",
-        "options": {
-          "maxOutputTokens": 250,
-          "temperature": 0.2
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        144,
-        432
-      ],
-      "id": "5e3f1b04-bbbb-4d7a-a5e1-0004toolllm",
-      "name": "Tool LLM (Gemini Flash)",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "JjjWWqrKLljutcjM",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
+      "id": "filter-messages-only",
+      "name": "Has Message?"
     }
   ],
-  "pinData": {},
   "connections": {
     "WhatsApp Trigger": {
       "main": [
         [
           {
-            "node": "AI Agent",
+            "node": "Has Message?",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Gemini Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_languageModel",
             "index": 0
           }
         ]
@@ -313,50 +373,6 @@
           {
             "node": "AI Agent",
             "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "ILOT Knowledge Base": {
-      "ai_tool": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Simple Vector Store (read)": {
-      "ai_vectorStore": [
-        [
-          {
-            "node": "ILOT Knowledge Base",
-            "type": "ai_vectorStore",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Embeddings (read)": {
-      "ai_embedding": [
-        [
-          {
-            "node": "Simple Vector Store (read)",
-            "type": "ai_embedding",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Tool LLM (Gemini Flash)": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "ILOT Knowledge Base",
-            "type": "ai_languageModel",
             "index": 0
           }
         ]
@@ -388,7 +404,7 @@
       "main": [
         [
           {
-            "node": "Create lead in NocoDB",
+            "node": "Generate Case Token",
             "type": "main",
             "index": 0
           }
@@ -406,25 +422,91 @@
       "main": [
         [
           {
-            "node": "Send message",
+            "node": "Send commitment ask",
             "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search FAQs": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Case Token": {
+      "main": [
+        [
+          {
+            "node": "Create lead in NocoDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Calendar Availability": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Book Meeting": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Message?": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
             "index": 0
           }
         ]
       ]
     }
   },
-  "active": false,
   "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate",
-    "availableInMCP": false
+    "executionOrder": "v1"
   },
-  "versionId": "86cff607-652e-4acc-8cb1-f3a1e9176e48",
+  "pinData": {},
+  "tags": [],
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "f29b9c571d9c6280b50f8d83ff7ed04a9917b449bee42d411af0cecb9412bf2e"
+    "exportedFrom": "activeVersion",
+    "exportedAt": "2026-08-31",
+    "sourceVersionId": "a44d8f83-5f4f-49ad-b74b-20b51fbb96e5",
+    "draftMatchesPublished": true,
+    "note": "Read from n8n.ilotlegal.com via the public API. Production runs activeVersion, not the top-level draft nodes."
   },
-  "id": "EHTyQZSnZMZsespF",
-  "tags": []
+  "versionId": "a44d8f83-5f4f-49ad-b74b-20b51fbb96e5"
 }

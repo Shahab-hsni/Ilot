@@ -1,0 +1,371 @@
+{
+  "id": "Ez08kr0HLdziPPwy",
+  "name": "Ilot - Assign Agent (#5)",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "customer_id",
+              "type": "string"
+            },
+            {
+              "name": "department",
+              "type": "string"
+            },
+            {
+              "name": "service",
+              "type": "string"
+            },
+            {
+              "name": "customer_name",
+              "type": "string"
+            },
+            {
+              "name": "customer_phone",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -220,
+        0
+      ],
+      "id": "wf5trig001-0000-4aaa-bbbb-wf5triggernode",
+      "name": "When Called by #4"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "getAll",
+        "workspaceId": "wwhn1cbz",
+        "projectId": "pkm6hqm4mh9vj0s",
+        "table": "mcgjknbniocnvk7",
+        "returnAll": true,
+        "options": {
+          "where": "=(department,eq,{{ $json.department }})~and(active,eq,true)",
+          "sort": "open_cases"
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "getagents1-0000-4aaa-bbbb-getagentsnode01",
+      "name": "Get Active Agents (dept)",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "KiRKfHvdvcKwu1AQ",
+          "name": "NocoDB Token account"
+        }
+      },
+      "notes": "Department match. If departments in Agents table differ from lead Department strings, normalize here or add a mapping Code node."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pick the agent with the fewest open cases. Falls back gracefully if the\n// department has no active agents (returns assigned=false so caller can\n// alert ops instead of silently dropping the case).\n\nconst items = $input.all().map(i => i.json).filter(Boolean);\nconst trigger = $('When Called by #4').first().json;\n\nif (!items.length || !items[0] || items[0].Id === undefined) {\n  return [{ json: { assigned: false, reason: 'no_active_agent_in_department', ...trigger } }];\n}\n\n// Sort by open_cases asc (treat null/undefined as 0), tie-break by Id asc.\nconst sorted = items\n  .filter(a => a.Id !== undefined)\n  .sort((a, b) => {\n    const ao = Number(a.open_cases || 0);\n    const bo = Number(b.open_cases || 0);\n    if (ao !== bo) return ao - bo;\n    return Number(a.Id) - Number(b.Id);\n  });\n\nconst agent = sorted[0];\n\nreturn [{\n  json: {\n    assigned: true,\n    agent_id: agent.Id,\n    agent_name: agent.name,\n    agent_phone: agent.phone,\n    agent_slack: agent.slack_id || '',\n    agent_open_cases: Number(agent.open_cases || 0),\n    ...trigger\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "pickagent1-0000-4aaa-bbbb-pickagentnode01",
+      "name": "Pick Least-Loaded Agent"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "assigned-check",
+              "leftValue": "={{ $json.assigned }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        440,
+        0
+      ],
+      "id": "assignif01-0000-4aaa-bbbb-assignedifnode1",
+      "name": "Agent Found?"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "update",
+        "workspaceId": "wwhn1cbz",
+        "projectId": "pkm6hqm4mh9vj0s",
+        "table": "m1q8u8q393tf6ej",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldName": "Id",
+              "fieldValue": "={{ $json.customer_id }}"
+            },
+            {
+              "fieldName": "assigned_agent_id",
+              "fieldValue": "={{ $json.agent_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 3,
+      "position": [
+        660,
+        -120
+      ],
+      "id": "updclient1-0000-4aaa-bbbb-updclientassign",
+      "name": "Assign Agent to Client",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "KiRKfHvdvcKwu1AQ",
+          "name": "NocoDB Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "update",
+        "workspaceId": "wwhn1cbz",
+        "projectId": "pkm6hqm4mh9vj0s",
+        "table": "mcgjknbniocnvk7",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldName": "Id",
+              "fieldValue": "={{ $('Pick Least-Loaded Agent').item.json.agent_id }}"
+            },
+            {
+              "fieldName": "open_cases",
+              "fieldValue": "={{ Number($('Pick Least-Loaded Agent').item.json.agent_open_cases) + 1 }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 3,
+      "position": [
+        880,
+        -120
+      ],
+      "id": "inccases001-0000-4aaa-bbbb-incopencasesnod",
+      "name": "Increment Agent Open Cases",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "KiRKfHvdvcKwu1AQ",
+          "name": "NocoDB Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v25.0/1231024886758816/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\"messaging_product\":\"whatsapp\",\"to\":$('Pick Least-Loaded Agent').item.json.agent_phone,\"type\":\"template\",\"template\":{\"name\":\"agent_case_assigned\",\"language\":{\"code\":\"en\"},\"components\":[{\"type\":\"body\",\"parameters\":[{\"type\":\"text\",\"text\":$('Pick Least-Loaded Agent').item.json.customer_name},{\"type\":\"text\",\"text\":$('Pick Least-Loaded Agent').item.json.service},{\"type\":\"text\",\"text\":$('Pick Least-Loaded Agent').item.json.customer_phone}]}]}}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        -120
+      ],
+      "id": "notifyag01-0000-4aaa-bbbb-notifyagentnode",
+      "name": "Notify Agent (WhatsApp)",
+      "webhookId": "dd33ee44-5555-4fff-aaaa-notifyagenthook",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "o6dqNLf1TgJgnOIW",
+          "name": "WhatsApp account"
+        }
+      },
+      "notes": "Template send. agent_case_assigned is PENDING review; sends also need a payment method on the WABA (141006). onError is deliberate \u2014 see docs/human-agent-handoff.md.",
+      "onError": "continueRegularOutput",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1231024886758816",
+        "recipientPhoneNumber": "={{ $('Pick Least-Loaded Agent').item.json.customer_phone }}",
+        "textBody": "Your case officer {{ $('Pick Least-Loaded Agent').item.json.agent_name }} has been assigned. They'll reach out within 1 business day. \u2705",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        -120
+      ],
+      "id": "confcust01-0000-4aaa-bbbb-confirmcustnode",
+      "name": "Confirm to Customer",
+      "webhookId": "ee44ff55-6666-4aaa-bbbb-confirmcusthook",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "o6dqNLf1TgJgnOIW",
+          "name": "WhatsApp account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "fromEmail": "legal.admin@ilotpropertybali.com",
+        "toEmail": "legal.admin@ilotpropertybali.com",
+        "subject": "=\u26a0\ufe0f No active agent for committed case \u2014 {{ $json.customer_name }}",
+        "emailType": "text",
+        "message": "=No active agent in department '{{ $json.department }}' for a committed case.\n\nName: {{ $json.customer_name }}\nPhone: {{ $json.customer_phone }}\nService: {{ $json.service }}\n\nThis case needs manual assignment. Open the customer chat: https://wa.me/{{ $json.customer_phone }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        660,
+        160
+      ],
+      "id": "opsalert01-0000-4aaa-bbbb-opsalertnode001",
+      "name": "Ops Alert: No Agent",
+      "webhookId": "ff55aa66-7777-4bbb-cccc-opsalerthook001",
+      "credentials": {
+        "smtp": {
+          "id": "fppQBltXypbJXeDg",
+          "name": "Ilot - legal@ Gmail SMTP"
+        }
+      },
+      "notes": "Was a WhatsApp send to the literal string REPLACE_WITH_OPS_FALLBACK_NUMBER and had never worked. Email has no 24-hour window and needs no template, so this path works today.",
+      "onError": "continueRegularOutput",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "When Called by #4": {
+      "main": [
+        [
+          {
+            "node": "Get Active Agents (dept)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Agents (dept)": {
+      "main": [
+        [
+          {
+            "node": "Pick Least-Loaded Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Least-Loaded Agent": {
+      "main": [
+        [
+          {
+            "node": "Agent Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Found?": {
+      "main": [
+        [
+          {
+            "node": "Assign Agent to Client",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ops Alert: No Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assign Agent to Client": {
+      "main": [
+        [
+          {
+            "node": "Increment Agent Open Cases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Increment Agent Open Cases": {
+      "main": [
+        [
+          {
+            "node": "Confirm to Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm to Customer": {
+      "main": [
+        [
+          {
+            "node": "Notify Agent (WhatsApp)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": [],
+  "meta": {
+    "exportedFrom": "activeVersion",
+    "exportedAt": "2026-08-31",
+    "sourceVersionId": "98909721-0553-444b-a91e-be16d4342113",
+    "draftMatchesPublished": true,
+    "note": "Post-repair: Confirm to Customer ahead of Notify Agent, Notify Agent is a template send, Ops Alert is email to legal.admin@ilotpropertybali.com, onError on all three. Production runs activeVersion."
+  },
+  "versionId": "98909721-0553-444b-a91e-be16d4342113"
+}

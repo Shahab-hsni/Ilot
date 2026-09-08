@@ -31,7 +31,7 @@ export interface ParsedCategory {
   subCategories: ParsedSubCategory[]
 }
 
-/** Shape of each row in docs/seed-data-raw.json (new unified snake_case format) */
+/** Shape of each row in docs/seed-data/raw.json (new unified snake_case format) */
 export interface ClientDataRow {
   category_name: string
   category_slug: string

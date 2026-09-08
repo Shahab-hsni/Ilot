@@ -1,0 +1,37 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "000000000000000",
+      "changes": [
+        {
+          "field": "messages",
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "6281200000000",
+              "phone_number_id": "1063131786890917"
+            },
+            "contacts": [
+              {
+                "profile": { "name": "Test Lead" },
+                "wa_id": "6281299990002"
+              }
+            ],
+            "messages": [
+              {
+                "from": "6281299990002",
+                "id": "wamid.LOCALTEST0001",
+                "timestamp": "1787900000",
+                "type": "text",
+                "text": {
+                  "body": "Hi, I'm James Carter from Australia. I want to apply for a KITAS working visa - can you help?"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
