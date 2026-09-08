@@ -113,7 +113,20 @@ export function Footer() {
 
         <div className="border-t border-white/10 pt-6 text-xs text-muted flex flex-col md:flex-row justify-between gap-2">
           <span>© {new Date().getFullYear()} Ilot. All rights reserved.</span>
-          <span>Indonesia · English</span>
+          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
+            <span>Indonesia · English</span>
+            <span>
+              Website built by{' '}
+              <a
+                href="https://monolitlabs.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-gray-300 hover:text-white underline underline-offset-2 decoration-white/30 hover:decoration-white transition-colors"
+              >
+                Monolit Labs
+              </a>
+            </span>
+          </div>
         </div>
       </div>
     </footer>
